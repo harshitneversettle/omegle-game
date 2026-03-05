@@ -2,6 +2,19 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const WebSocket = require("ws");
 const all_sockets = [];
+function getRandomIdx(length) {
+    let min = 0;
+    let max = length;
+    // +1 is because if we not add 1 the max will be excluded
+    const first = Math.floor(Math.random() * (max - min) + min);
+    let second = Math.floor(Math.random() * (max - min) + min);
+    while (second === first) {
+        second = Math.floor(Math.random() * (max - min) + min);
+    }
+    return [first, second];
+}
+let user1 = null;
+let user2 = null;
 let wss = new WebSocket.WebSocketServer({ port: 8080 });
 let sender_socket = null;
 let receiver_socket = null;
@@ -15,12 +28,29 @@ wss.on("connection", (socket) => {
                 socket: socket,
             });
             if (all_sockets.length >= 2) {
-                all_sockets[0].socket.send(JSON.stringify({ type: "create-offer" }));
+                console.log("1");
+                // @ts-ignore
+                const [rand1, rand2] = getRandomIdx(all_sockets.length);
+                console.log(rand1);
+                console.log(rand2);
+                // console.log(rand);
+                // @ts-ignore
+                if (!all_sockets[rand1] || !all_sockets[rand2]) {
+                    return;
+                }
+                console.log("2");
+                // @ts-ignore
+                user1 = all_sockets[rand1].socket;
+                // @ts-ignore
+                user2 = all_sockets[rand2].socket;
+                // console.log(user1);
+                // console.log(user2);
+                user1?.send(JSON.stringify({ type: "create-offer" }));
                 // all_sockets[1]!.socket.send(JSON.stringify({ type: "create-answer" }));
             }
         }
         else if (message.type == "offer") {
-            all_sockets[1]?.socket.send(JSON.stringify({
+            user2.send(JSON.stringify({
                 type: "offer",
                 sdp: message.sdp,
             }));
@@ -33,7 +63,7 @@ wss.on("connection", (socket) => {
         }
         else if (message.type == "add-ice-candidates") {
             if (socket == all_sockets[0]?.socket) {
-                all_sockets[1]?.socket.send(JSON.stringify({
+                user2.send(JSON.stringify({
                     type: "ice-candidates",
                     candidate: message.candidate,
                 }));
