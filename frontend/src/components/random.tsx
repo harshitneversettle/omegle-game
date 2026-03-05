@@ -1,13 +1,35 @@
 import { FaceLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
-import { use, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function Random() {
   //   const ws = new WebSocket("ws://localhost:8080");
+  interface message {
+    text: string;
+    sender: string;
+  }
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const viderRef = useRef<HTMLVideoElement | null>(null);
   const selfviderRef = useRef<HTMLVideoElement | null>(null);
   const faceLandmarkerRef = useRef<FaceLandmarker | null>(null);
+  const [allMessages, setAllMessages] = useState<message[]>([]);
+  const messageInput = useRef(null);
 
+  function handlemessage() {
+    if (!messageInput.current) return;
+    // @ts-ignore
+    console.log("array : ", allMessages);
+    // @ts-ignore
+    setAllMessages((prev) => [...prev, { text : messageInput.current.value, sender: "me" }]);
+    socket?.send(
+      JSON.stringify({
+        type: "message",
+        payload: {
+          // @ts-ignore
+          text: messageInput.current.value,
+        },
+      }),
+    );
+  }
   function distance(p1: any, p2: any) {
     const dx = p1.x - p2.x;
     const dy = p1.y - p2.y;
@@ -46,7 +68,7 @@ export default function Random() {
         alert("Face not detected");
         requestAnimationFrame(detect);
       }
-
+      5173;
       if (!results.faceLandmarks.length) return;
       const landmarks = results.faceLandmarks[0];
       const p1_left = landmarks[33] || null;
@@ -95,8 +117,8 @@ export default function Random() {
       const EAR_right =
         (vertical1_right + vertical2_right) / (2 * horizontal_right);
 
-      console.log("EAR left ", EAR_left);
-      console.log("EAR right ", EAR_right);
+      // console.log("EAR left ", EAR_left);
+      // console.log("EAR right ", EAR_right);
       //  0.3001998922706451;
 
       // open left = 0.33    open right = 0.36
@@ -108,7 +130,6 @@ export default function Random() {
       //   console.log("Face detected");
       // }
     }
-
     requestAnimationFrame(detect);
   }
 
@@ -151,7 +172,7 @@ export default function Random() {
               viderRef.current.srcObject = new MediaStream([stream.track]);
             }
           };
-          console.log(pc.current)
+          // console.log(pc.current);
           pc.current.onicecandidate = (msg) => {
             if (msg.candidate) {
               ws.send(
@@ -188,7 +209,7 @@ export default function Random() {
             audio: false,
           });
           pc.current.addTrack(stream.getVideoTracks()[0]);
-          console.log("Senders:", pc.current?.getSenders());
+
           pc.current.ontrack = (stream) => {
             if (viderRef.current) {
               viderRef.current.srcObject = new MediaStream([stream.track]);
@@ -219,6 +240,18 @@ export default function Random() {
           await pc.current.setRemoteDescription(message.sdp);
         } else if (message.type === "ice-candidates") {
           await pc.current?.addIceCandidate(message.candidate);
+        } else if (message.type == "message") {
+          console.log(allMessages);
+          const text = message.payload.text;
+          const sender = message.payload.sender;
+          console.log(sender)
+          console.log(sender==socket)
+          // @ts-ignore
+          if (sender == socket) {
+            setAllMessages((prev) => [...prev, { text: text, sender: "me" }]);
+          } else {
+            setAllMessages((prev) => [...prev, { text: text, sender: "peer" }]);
+          }
         }
       };
     };
@@ -229,21 +262,65 @@ export default function Random() {
     pc.current?.close();
   }
   return (
-    <div className="flex flex-col ">
-      random video
-      <video
-        ref={viderRef}
-        autoPlay
-        playsInline
-        className="w-200 h-200"
-      ></video>
-      <button onClick={closecall}>close</button>
-      <video
-        ref={selfviderRef}
-        autoPlay
-        playsInline
-        className="w-100 h-100"
-      ></video>
-    </div>
+    <>
+      <div className=" h-screen flex gap-50 mt-10 justify-center   ">
+        <div className="flex flex-col ml-25 ">
+          partner's cam :{" "}
+          <video
+            ref={viderRef}
+            autoPlay
+            playsInline
+            className="w-100 h-100"
+          ></video>
+          self cam :{" "}
+          <video
+            ref={selfviderRef}
+            autoPlay
+            playsInline
+            className="w-100 h-100"
+          ></video>
+          <button
+            className="bg-red-600 w-60  mt-4 mx-auto p-1 text-white rounded-full border-1 border-black hover:bg-red-400 "
+            onClick={closecall}
+          >
+            close call
+          </button>
+        </div>
+        <div className="">
+          <div className="w-100 h-200 bg-zinc-900 border-2 border-gray-5 rounded-xl flex flex-col justify-between ">
+            <div className="flex flex-col">
+              <div className="m-3">
+                {allMessages.map((i, index) => {
+                  return (
+                    <div
+                      key={index}
+                      className={` max-w-fit p-2  mt-3 rounded-2xl  break-words ${i.sender === "me" ? "bg-green-900 ml-auto rounded-br-none " : "bg-blue-900 rounded-bl-none"} `}
+                    >
+                      {i.text}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="flex p-2">
+              <input
+                ref={messageInput}
+                type="text"
+                name=""
+                id=""
+                className="bg-gray-400 text-black rounded-full p-2 w-90"
+                placeholder="llll"
+              />
+              <button
+                onClick={handlemessage}
+                className="bg-blue-600 p-2 rounded-full w-17 ml-2 border-1 hover:border-black hover:bg-blue-500"
+              >
+                send
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }

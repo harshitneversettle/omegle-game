@@ -5,7 +5,7 @@ const all_sockets = [];
 function getRandomIdx(length) {
     let min = 0;
     let max = length;
-    // +1 is because if we not add 1 the max will be excluded
+    // +1 is because if we not add 1 the max will be excluded , isme nhi kiya coz array ka index hai -1 hi chaiye humesha
     const first = Math.floor(Math.random() * (max - min) + min);
     let second = Math.floor(Math.random() * (max - min) + min);
     while (second === first) {
@@ -28,17 +28,17 @@ wss.on("connection", (socket) => {
                 socket: socket,
             });
             if (all_sockets.length >= 2) {
-                console.log("1");
+                // console.log("1");
                 // @ts-ignore
                 const [rand1, rand2] = getRandomIdx(all_sockets.length);
-                console.log(rand1);
-                console.log(rand2);
+                // console.log(rand1);
+                // console.log(rand2);
                 // console.log(rand);
                 // @ts-ignore
                 if (!all_sockets[rand1] || !all_sockets[rand2]) {
                     return;
                 }
-                console.log("2");
+                // console.log("2");
                 // @ts-ignore
                 user1 = all_sockets[rand1].socket;
                 // @ts-ignore
@@ -72,6 +72,26 @@ wss.on("connection", (socket) => {
                 all_sockets[0]?.socket.send(JSON.stringify({
                     type: "ice-candidates",
                     candidate: message.candidate,
+                }));
+            }
+        }
+        else if (message.type == "message") {
+            console.log(message.payload.text);
+            if (socket == user1) {
+                user2.send(JSON.stringify({
+                    type: "message",
+                    payload: {
+                        text: message.payload.text,
+                    },
+                }));
+            }
+            else if (socket == user2) {
+                user1.send(JSON.stringify({
+                    type: "message",
+                    payload: {
+                        text: message.payload.text,
+                        sender: socket
+                    },
                 }));
             }
         }
