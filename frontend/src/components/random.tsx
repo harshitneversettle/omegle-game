@@ -70,12 +70,14 @@ export default function Random() {
             video: true,
             audio: false,
           });
-          pc.current.addTrack(stream.getVideoTracks()[0]);
+
+          // always set ontrack before addtrack
           pc.current.ontrack = (stream) => {
             if (viderRef.current) {
               viderRef.current.srcObject = new MediaStream([stream.track]);
             }
           };
+          pc.current.addTrack(stream.getVideoTracks()[0]);
           pc.current.onicecandidate = (msg) => {
             if (msg.candidate) {
               ws.send(
@@ -111,13 +113,14 @@ export default function Random() {
             video: true,
             audio: false,
           });
-          pc.current.addTrack(stream.getVideoTracks()[0]);
-
+          // always set ontrack before addtrack
           pc.current.ontrack = (stream) => {
             if (viderRef.current) {
               viderRef.current.srcObject = new MediaStream([stream.track]);
             }
           };
+          pc.current.addTrack(stream.getVideoTracks()[0]);
+
           // ans banane se phele remote description set krna padha hai mandatory step hai
           await pc.current.setRemoteDescription(message.sdp);
           const answer = await pc.current.createAnswer();
@@ -166,7 +169,7 @@ export default function Random() {
   }
   return (
     <>
-      <div className=" h-screen flex gap-50 mt-10 justify-center   ">
+      <div className=" h-screen flex gap-50 mt-10 justify-center  ">
         <div className="flex flex-col ml-25 ">
           partner's cam :{" "}
           <video
@@ -197,7 +200,7 @@ export default function Random() {
                   return (
                     <div
                       key={index}
-                      className={` max-w-fit p-2  mt-3 rounded-2xl  break-words ${i.sender === "me" ? "bg-green-900 ml-auto rounded-br-none " : "bg-blue-900 rounded-bl-none"} `}
+                      className={` w-fit border-1 border-black shadow-outer shadow-white max-w-[70%] p-2  mt-3 rounded-2xl  break-words ${i.sender === "me" ? "bg-green-900 ml-auto rounded-br-none " : "bg-blue-900 rounded-bl-none"} `}
                     >
                       {i.text}
                     </div>
@@ -217,7 +220,7 @@ export default function Random() {
                 }}
                 name=""
                 id=""
-                className="bg-gray-400 text-black rounded-full p-2 w-90"
+                className="bg-gray-400 text-black text-semibold text-llg border-2 border-black rounded-full p-2 w-90"
                 placeholder="llll"
               />
               <button
@@ -230,7 +233,7 @@ export default function Random() {
                 }}
                 className="bg-blue-600 p-2 rounded-full w-17 ml-2 border-1 hover:border-black hover:bg-blue-500"
               >
-                send lode
+                send
               </button>
             </div>
           </div>

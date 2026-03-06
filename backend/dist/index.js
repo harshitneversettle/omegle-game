@@ -56,19 +56,19 @@ wss.on("connection", (socket) => {
             }));
         }
         else if (message.type == "answer") {
-            all_sockets[0]?.socket.send(JSON.stringify({
+            user1.send(JSON.stringify({
                 type: "answer",
                 sdp: message.sdp,
             }));
         }
         else if (message.type == "add-ice-candidates") {
-            if (socket == all_sockets[0]?.socket) {
+            if (socket == user1) {
                 user2.send(JSON.stringify({
                     type: "ice-candidates",
                     candidate: message.candidate,
                 }));
             }
-            else if (socket == all_sockets[1]?.socket) {
+            else if (socket == user2) {
                 all_sockets[0]?.socket.send(JSON.stringify({
                     type: "ice-candidates",
                     candidate: message.candidate,
@@ -92,9 +92,9 @@ wss.on("connection", (socket) => {
                     },
                 }));
             }
-            else if (message.type == "close") {
-                all_sockets = all_sockets.filter((i) => i.socket !== socket);
-            }
+        }
+        else if (message.type == "close") {
+            all_sockets = all_sockets.filter((i) => i.socket !== socket);
         }
         //  if (message.type == "sender") {
         //     console.log("sender is set");
