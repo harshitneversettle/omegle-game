@@ -41,44 +41,54 @@ export default function Random() {
   let pc = useRef<RTCPeerConnection | null>(null);
 
   useEffect(() => {
-    async function selfcam() {
+    async function initprocess() {
       stream.current = await navigator.mediaDevices.getUserMedia({
         video: true,
         audio: false,
       });
-      if (!selfviderRef.current) return;
-      selfviderRef.current.srcObject = stream.current;
-    }
-    selfcam();
-  }, []);
-  useEffect(() => {
-    let ws = new WebSocket("ws://localhost:8080");
-    ws.onopen = () => {
-      ws.send(
-        JSON.stringify({
-          type: "random",
-          name: "harshit",
-        }),
-      );
-      setSocket(ws);
+
+      if (selfviderRef.current) {
+        selfviderRef.current.srcObject = stream.current;
+      }
+
+      let ws = new WebSocket("ws://localhost:8080");
+      ws.onopen = () => {
+        ws.send(
+          JSON.stringify({
+            type: "random",
+            name: "harshit",
+          }),
+        );
+        setSocket(ws);
+      };
 
       ws.onmessage = async (msg) => {
         const message = JSON.parse(msg.data);
         if (message.type == "create-offer") {
+          if (!stream.current) {
+            console.error("Camera not ready yet");
+            return;
+          }
           // create offer mtlb offer banana hai
-          pc.current = new RTCPeerConnection();
+          pc.current = new RTCPeerConnection({
+            iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+          });
           // let stream = await navigator.mediaDevices.getUserMedia({
           //   video: true,
           //   audio: false,
           // });
 
           // always set ontrack before addtrack
-          pc.current.ontrack = (eventTrack) => {
-            if (viderRef.current) {
-              viderRef.current.srcObject = new MediaStream([eventTrack.track]);
+          pc.current.ontrack = (event) => {
+            if (viderRef.current && event.streams[0]) {
+              viderRef.current.srcObject = event.streams[0];
             }
           };
-          pc.current.addTrack(stream.current!.getVideoTracks()[0]);
+          pc.current.addTrack(
+            stream.current!.getVideoTracks()[0],
+            stream.current!,
+          );
+          const offer = await pc.current.createOffer();
           pc.current.onicecandidate = (msg) => {
             if (msg.candidate) {
               ws.send(
@@ -89,7 +99,6 @@ export default function Random() {
               );
             }
           };
-          const offer = await pc.current.createOffer();
           await pc.current.setLocalDescription(offer);
           ws?.send(
             JSON.stringify({
@@ -99,29 +108,19 @@ export default function Random() {
           );
         } else if (message.type == "offer") {
           // offer aaya hai , uske liye ans banana hai
-          pc.current = new RTCPeerConnection();
-          pc.current.onicecandidate = (msg) => {
-            if (msg.candidate) {
-              ws.send(
-                JSON.stringify({
-                  type: "add-ice-candidates",
-                  candidate: msg.candidate,
-                }),
-              );
-            }
-          };
-          let stream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: false,
+          pc.current = new RTCPeerConnection({
+            iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
           });
           // always set ontrack before addtrack
-          pc.current.ontrack = (eventTrack) => {
-            if (viderRef.current) {
-              viderRef.current.srcObject = new MediaStream([eventTrack.track]);
+          pc.current.ontrack = (event) => {
+            if (viderRef.current && event.streams[0]) {
+              viderRef.current.srcObject = event.streams[0];
             }
           };
-          pc.current.addTrack(stream.getVideoTracks()[0]);
-
+          pc.current.addTrack(
+            stream.current!.getVideoTracks()[0],
+            stream.current!,
+          );
           // ans banane se phele remote description set krna padha hai mandatory step hai
           await pc.current.setRemoteDescription(message.sdp);
           const answer = await pc.current.createAnswer();
@@ -132,6 +131,16 @@ export default function Random() {
               sdp: answer,
             }),
           );
+          pc.current.onicecandidate = (msg) => {
+            if (msg.candidate) {
+              ws.send(
+                JSON.stringify({
+                  type: "add-ice-candidates",
+                  candidate: msg.candidate,
+                }),
+              );
+            }
+          };
         } else if (message.type == "answer") {
           if (!pc.current) return;
           pc.current.onicecandidate = (msg) => {
@@ -153,10 +162,12 @@ export default function Random() {
           setAllMessages((prev) => [...prev, { text: text, sender: "peer" }]);
         }
       };
-    };
+    }
+
     // initFaceDetection();
     //@ts-ignore
     // blinkDectection(socket!, viderRef);
+    initprocess();
   }, []);
 
   function closecall() {

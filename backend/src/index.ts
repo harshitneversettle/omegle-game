@@ -89,7 +89,7 @@ wss.on("connection", (socket) => {
           }),
         );
       } else if (socket == user2) {
-        all_sockets[0]?.socket.send(
+        user1!.send(
           JSON.stringify({
             type: "ice-candidates",
             candidate: message.candidate,
