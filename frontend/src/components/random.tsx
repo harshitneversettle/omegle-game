@@ -201,7 +201,7 @@ export default function Random() {
                   return (
                     <div
                       key={index}
-                      className={` w-fit border-1 border-black shadow-outer shadow-white max-w-[70%] p-2  mt-3 rounded-2xl  break-words ${i.sender === "me" ? "bg-green-900 ml-auto rounded-br-none " : "bg-blue-900 rounded-bl-none"} `}
+                      className={` w-fit border-1 border-black  max-w-[70%] p-2  mt-3 rounded-2xl break-words ${i.sender === "me" ? "bg-green-900 ml-auto rounded-br-none " : "bg-blue-900 rounded-bl-none"} `}
                     >
                       {i.text}
                     </div>

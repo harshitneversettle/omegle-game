@@ -117,7 +117,10 @@ wss.on("connection", (socket) => {
         );
       }
     } else if (message.type == "close") {
+      console.log("insode cloese")
+      console.log(all_sockets);
       all_sockets = all_sockets.filter((i) => i.socket !== socket);
+      console.log(all_sockets)
     }
     //  if (message.type == "sender") {
     //     console.log("sender is set");
