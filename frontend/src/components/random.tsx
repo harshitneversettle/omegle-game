@@ -14,6 +14,7 @@ export default function Random() {
   // const faceLandmarkerRef = useRef<FaceLandmarker | null>(null);
   const [allMessages, setAllMessages] = useState<message[]>([]);
   const messageInput = useRef(null);
+  const stream = useRef<MediaStream | null>(null);
 
   function handlemessage() {
     if (!messageInput.current) return;
@@ -41,12 +42,12 @@ export default function Random() {
 
   useEffect(() => {
     async function selfcam() {
-      const stream2 = await navigator.mediaDevices.getUserMedia({
+      stream.current = await navigator.mediaDevices.getUserMedia({
         video: true,
         audio: false,
       });
       if (!selfviderRef.current) return;
-      selfviderRef.current.srcObject = stream2;
+      selfviderRef.current.srcObject = stream.current;
     }
     selfcam();
   }, []);
@@ -66,18 +67,18 @@ export default function Random() {
         if (message.type == "create-offer") {
           // create offer mtlb offer banana hai
           pc.current = new RTCPeerConnection();
-          let stream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: false,
-          });
+          // let stream = await navigator.mediaDevices.getUserMedia({
+          //   video: true,
+          //   audio: false,
+          // });
 
           // always set ontrack before addtrack
-          pc.current.ontrack = (stream) => {
+          pc.current.ontrack = (eventTrack) => {
             if (viderRef.current) {
-              viderRef.current.srcObject = new MediaStream([stream.track]);
+              viderRef.current.srcObject = new MediaStream([eventTrack.track]);
             }
           };
-          pc.current.addTrack(stream.getVideoTracks()[0]);
+          pc.current.addTrack(stream.current!.getVideoTracks()[0]);
           pc.current.onicecandidate = (msg) => {
             if (msg.candidate) {
               ws.send(
@@ -114,9 +115,9 @@ export default function Random() {
             audio: false,
           });
           // always set ontrack before addtrack
-          pc.current.ontrack = (stream) => {
+          pc.current.ontrack = (eventTrack) => {
             if (viderRef.current) {
-              viderRef.current.srcObject = new MediaStream([stream.track]);
+              viderRef.current.srcObject = new MediaStream([eventTrack.track]);
             }
           };
           pc.current.addTrack(stream.getVideoTracks()[0]);
