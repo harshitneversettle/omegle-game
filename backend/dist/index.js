@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const WebSocket = require("ws");
-const all_sockets = [];
+let all_sockets = [];
 function getRandomIdx(length) {
     let min = 0;
     let max = length;
@@ -76,7 +76,6 @@ wss.on("connection", (socket) => {
             }
         }
         else if (message.type == "message") {
-            console.log(message.payload.text);
             if (socket == user1) {
                 user2.send(JSON.stringify({
                     type: "message",
@@ -92,6 +91,9 @@ wss.on("connection", (socket) => {
                         text: message.payload.text,
                     },
                 }));
+            }
+            else if (message.type == "close") {
+                all_sockets = all_sockets.filter((i) => i.socket !== socket);
             }
         }
         //  if (message.type == "sender") {

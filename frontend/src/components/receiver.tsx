@@ -49,6 +49,7 @@ export default function Receiver() {
           video: true,
           audio: false,
         });
+        
         pc.current.addTrack(stream.getVideoTracks()[0]);
 
         pc.current.ontrack = (event) => {

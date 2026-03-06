@@ -14,7 +14,7 @@ interface Users {
   username: string;
   socket: WebSocket;
 }
-const all_sockets: Users[] = [];
+let all_sockets: Users[] = [];
 
 function getRandomIdx(length: number) {
   let min = 0;
@@ -97,7 +97,6 @@ wss.on("connection", (socket) => {
         );
       }
     } else if (message.type == "message") {
-      console.log(message.payload.text)
       if (socket == user1) {
         user2!.send(
           JSON.stringify({
@@ -116,6 +115,8 @@ wss.on("connection", (socket) => {
             },
           }),
         );
+      } else if (message.type == "close") {
+        all_sockets = all_sockets.filter((i) => i.socket !== socket);
       }
     }
     //  if (message.type == "sender") {
