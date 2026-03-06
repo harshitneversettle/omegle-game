@@ -90,7 +90,6 @@ wss.on("connection", (socket) => {
                     type: "message",
                     payload: {
                         text: message.payload.text,
-                        sender: socket
                     },
                 }));
             }

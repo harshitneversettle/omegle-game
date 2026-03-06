@@ -5,7 +5,7 @@ export default function Random() {
   //   const ws = new WebSocket("ws://localhost:8080");
   interface message {
     text: string;
-    sender: string;
+    sender: "me" | "peer";
   }
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const viderRef = useRef<HTMLVideoElement | null>(null);
@@ -18,8 +18,11 @@ export default function Random() {
     if (!messageInput.current) return;
     // @ts-ignore
     console.log("array : ", allMessages);
-    // @ts-ignore
-    setAllMessages((prev) => [...prev, { text : messageInput.current.value, sender: "me" }]);
+    setAllMessages((prev) => [
+      ...prev,
+      // @ts-ignore
+      { text: messageInput.current.value, sender: "me" },
+    ]);
     socket?.send(
       JSON.stringify({
         type: "message",
@@ -243,15 +246,7 @@ export default function Random() {
         } else if (message.type == "message") {
           console.log(allMessages);
           const text = message.payload.text;
-          const sender = message.payload.sender;
-          console.log(sender)
-          console.log(sender==socket)
-          // @ts-ignore
-          if (sender == socket) {
-            setAllMessages((prev) => [...prev, { text: text, sender: "me" }]);
-          } else {
-            setAllMessages((prev) => [...prev, { text: text, sender: "peer" }]);
-          }
+          setAllMessages((prev) => [...prev, { text: text, sender: "peer" }]);
         }
       };
     };
