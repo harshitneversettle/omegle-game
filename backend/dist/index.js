@@ -98,6 +98,21 @@ wss.on("connection", (socket) => {
             console.log(all_sockets);
             all_sockets = all_sockets.filter((i) => i.socket !== socket);
             console.log(all_sockets);
+            socket.send(JSON.stringify({
+                type: "closed-connection",
+            }));
+        }
+        else if (message.type == "connection-closed") {
+            if (socket == user1) {
+                user2.send(JSON.stringify({
+                    type: "connection-closed",
+                }));
+            }
+            else if (socket == user2) {
+                user1.send(JSON.stringify({
+                    type: "connection-closed",
+                }));
+            }
         }
         //  if (message.type == "sender") {
         //     console.log("sender is set");

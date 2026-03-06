@@ -15,6 +15,7 @@ export default function Random() {
   const [allMessages, setAllMessages] = useState<message[]>([]);
   const messageInput = useRef(null);
   const stream = useRef<MediaStream | null>(null);
+  const [connected, setConnected] = useState(false);
 
   function handlemessage() {
     if (!messageInput.current) return;
@@ -47,6 +48,7 @@ export default function Random() {
         audio: false,
       });
 
+      // guard for checking that stream is there or not because camera access me thodi der lag skti hai
       if (selfviderRef.current) {
         selfviderRef.current.srcObject = stream.current;
       }
@@ -70,9 +72,7 @@ export default function Random() {
             return;
           }
           // create offer mtlb offer banana hai
-          pc.current = new RTCPeerConnection({
-            iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
-          });
+          pc.current = new RTCPeerConnection();
           // let stream = await navigator.mediaDevices.getUserMedia({
           //   video: true,
           //   audio: false,
@@ -131,7 +131,10 @@ export default function Random() {
               sdp: answer,
             }),
           );
+
           pc.current.onicecandidate = (msg) => {
+            const connectionState = pc.current?.iceConnectionState;
+            if (connectionState === "connected") setConnected(true);
             if (msg.candidate) {
               ws.send(
                 JSON.stringify({
@@ -144,6 +147,9 @@ export default function Random() {
         } else if (message.type == "answer") {
           if (!pc.current) return;
           pc.current.onicecandidate = (msg) => {
+            const connectionState = pc.current?.iceConnectionState;
+            if (connectionState === "connected") setConnected(true);
+            console.log(connectionState);
             if (msg.candidate) {
               ws.send(
                 JSON.stringify({
@@ -160,6 +166,8 @@ export default function Random() {
           console.log(allMessages);
           const text = message.payload.text;
           setAllMessages((prev) => [...prev, { text: text, sender: "peer" }]);
+        } else if (message.type == "closed-connection") {
+          setConnected(false);
         }
       };
     }
@@ -178,6 +186,13 @@ export default function Random() {
       }),
     );
     pc.current?.close();
+    pc.current?.close();
+    socket.close();
+    socket?.send(
+      JSON.stringify({
+        type: "connection-closed",
+      }),
+    );
   }
   return (
     <>
@@ -205,6 +220,9 @@ export default function Random() {
           </button>
         </div>
         <div className="">
+          <div className="ml-2 max-w-fit bg-green-800 mb-2 border-2 font-semibold border-yellow-500 text-white p-2 rounded-full">
+            {connected ? "connected" : "disconnected "}
+          </div>
           <div className="w-100 h-200 bg-zinc-900 border-2 border-gray-5 rounded-xl flex flex-col justify-between ">
             <div className="flex flex-col">
               <div className="m-3">
