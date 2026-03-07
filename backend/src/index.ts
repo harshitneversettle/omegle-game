@@ -28,31 +28,36 @@ let SockettoRoom = new Map<WebSocket, string>();
 
 let wss = new WebSocket.WebSocketServer({ port: 8080 });
 
+function tryConnection() {
+  if (waiting_queue.length >= 2) {
+    // => it's time to pair
+    const user1 = waiting_queue.shift()?.socket!;
+    const user2 = waiting_queue.shift()?.socket!;
+    const roomId = `roomId${Date.now()}`;
+    RoomtoSocket.set(roomId, { user1, user2 });
+    SockettoRoom.set(user1, roomId);
+    SockettoRoom.set(user2, roomId);
+    if (!user1) return;
+    user1.send(
+      JSON.stringify({
+        type: "create-offer",
+      }),
+    );
+  }
+}
+
 wss.on("connection", (socket) => {
   socket.on("message", (msg) => {
     const message = JSON.parse(msg.toString());
     if (message.type == "new-connection") {
+      console.log("incoming connection");
       const message = JSON.parse(msg.toString());
       waiting_queue.push({
         username: message.name,
         socket: socket,
         arrived_at: message.arriving_time,
       });
-      if (waiting_queue.length >= 2) {
-        // => it's time to pair
-        const user1 = waiting_queue.shift()?.socket!;
-        const user2 = waiting_queue.shift()?.socket!;
-        const roomId = `roomId${Date.now()}`;
-        RoomtoSocket.set(roomId, { user1, user2 });
-        SockettoRoom.set(user1, roomId);
-        SockettoRoom.set(user2, roomId);
-        if (!user1) return;
-        user1.send(
-          JSON.stringify({
-            type: "create-offer",
-          }),
-        );
-      }
+      tryConnection();
       setInterval(() => {
         waiting_queue.forEach((i) => {
           const temp_socket = i.socket;
@@ -134,6 +139,7 @@ wss.on("connection", (socket) => {
           type: "closed-connection",
         }),
       );
+      tryConnection();
     } else if (message.type == "connection-closed") {
       const roomId = SockettoRoom.get(socket);
       if (!roomId) return;
@@ -194,5 +200,6 @@ wss.on("connection", (socket) => {
     RoomtoSocket.delete(roomId);
     SockettoRoom.delete(socket); // ye vo socket hai jiska close message aaya hai
     SockettoRoom.delete(socket == user1 ? user2 : user1); // ye partner socket hia
+    tryConnection();
   });
 });

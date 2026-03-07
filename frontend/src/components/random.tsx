@@ -1,5 +1,6 @@
 import { FaceLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
 import { useEffect, useRef, useState } from "react";
+import { LuPhone, LuVideo } from "react-icons/lu";
 
 export default function Random() {
   //   const ws = new WebSocket("ws://localhost:8080");
@@ -222,9 +223,7 @@ export default function Random() {
           );
         } else if (message.type == "offer") {
           // offer aaya hai , uske liye ans banana hai
-          pc.current = new RTCPeerConnection({
-            iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
-          });
+          pc.current = new RTCPeerConnection();
           // always set ontrack before addtrack
           pc.current.ontrack = (event) => {
             if (viderRef.current && event.streams[0]) {
@@ -245,7 +244,6 @@ export default function Random() {
               sdp: answer,
             }),
           );
-
           pc.current.onicecandidate = (msg) => {
             const connectionState = pc.current?.iceConnectionState;
             if (connectionState === "connected") setConnected(true);
@@ -308,88 +306,115 @@ export default function Random() {
   }
   return (
     <>
-      <div className=" h-screen flex gap-50 mt-10 justify-center  ">
-        <div className="flex flex-col gap-5">
-          <button
-            onClick={startCompetition}
-            className="rounded-full bg-white border-1 border-black h-fit w-fit p-2 text-black"
-          >
-            Init competition
-          </button>
-          <button
-            onClick={stopCompetition}
-            className="rounded-full bg-white border-1 border-black h-fit w-fit p-2 text-black"
-          >
-            stop competition
-          </button>
-        </div>
-        <div className="flex flex-col ml-25 ">
-          partner's cam :{" "}
-          <video
-            ref={viderRef}
-            autoPlay
-            playsInline
-            className="w-100 h-100"
-          ></video>
-          self cam :{" "}
-          <video
-            ref={selfviderRef}
-            autoPlay
-            playsInline
-            className="w-100 h-100"
-          ></video>
-          <button
-            className="bg-red-600 w-60  mt-4 mx-auto p-1 text-white rounded-full border-1 border-black hover:bg-red-400 "
-            onClick={closecall}
-          >
-            close call
-          </button>
-        </div>
-        <div className="">
-          <div className="ml-2 max-w-fit bg-green-800 mb-2 border-2 font-semibold border-yellow-500 text-white p-2 rounded-full">
-            {connected ? "connected" : "disconnected "}
+      <div className="w-screen h-screen bg-black flex flex-col overflow-hidden">
+        <div className="pl-7 pr-14 flex items-center justify-between h-18 px-5 py-3 border-b border-zinc-900 bg-zinc-950">
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-red-600" />
+            <span className="w-3 h-3 rounded-full bg-yellow-500" />
+            <span className="w-3 h-3 rounded-full bg-green-600" />
           </div>
-          <div className="w-100 h-200 bg-zinc-900 border-2 border-gray-5 rounded-xl flex flex-col justify-between ">
-            <div className="flex flex-col">
-              <div className="m-3">
-                {allMessages.map((i, index) => {
-                  return (
-                    <div
-                      key={index}
-                      className={` w-fit border-1 border-black  max-w-[70%] p-2  mt-3 rounded-2xl break-words ${i.sender === "me" ? "bg-green-900 ml-auto rounded-br-none " : "bg-blue-900 rounded-bl-none"} `}
-                    >
-                      {i.text}
-                    </div>
-                  );
-                })}
-              </div>
+
+          <div
+            className={`flex items-center gap-2 px-3 py-1 rounded-full border font-mono text-lg ${
+              connected ? "border-green-800 " : "border-red-900 "
+            }`}
+          >
+            <span
+              className={`w-2.5 h-2.5 rounded-full ${connected ? "bg-green-500" : "bg-red-600"}`}
+            />
+            {connected ? "connected" : "disconnected"}
+          </div>
+        </div>
+
+        <div className="flex flex-1 gap-4 p-4 overflow-hidden min-h-0">
+          <div className="flex-1 min-w-250  relative rounded-2xl overflow-hidden bg-zinc-950 border border-zinc-900 min-h-0">
+            <video
+              ref={viderRef}
+              autoPlay
+              playsInline
+              className="w-full h-full object-cover"
+            />
+
+            <div className="absolute bottom-4 right-4 w-60 h-50 rounded-xl overflow-hidden bg-zinc-900 border border-zinc-800 shadow-xl shadow-black/60">
+              <video
+                ref={selfviderRef}
+                autoPlay
+                playsInline
+                className="w-full h-full object-cover"
+              />
             </div>
-            <div className="flex p-2">
+          </div>
+
+          <div className="flex flex-col w-50 items-center justify-center gap-3 w-36 shrink-0">
+            <button
+              onClick={startCompetition}
+              className="group w-full flex items-center gap-2.5 px-3 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-300 text-md font-mono hover:border-zinc-600 hover:text-zinc-200 hover:bg-zinc-900 transition-all duration-150"
+            >
+              <span className="w-2 h-2 rounded-full  bg-green-500 shrink-0" />
+              Start competing
+            </button>
+
+            <button
+              onClick={stopCompetition}
+              className="group w-full flex items-center gap-2.5 px-3 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-300 text-md font-mono hover:border-zinc-600 hover:text-zinc-200 hover:bg-zinc-900 transition-all duration-150"
+            >
+              <span className="w-2 h-2 rounded-full  bg-yellow-500 transition-colors shrink-0" />
+              stop
+            </button>
+
+            <button className="group w-full flex items-center gap-2.5 px-3 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-300 text-md font-mono hover:border-zinc-600 hover:text-zinc-200 hover:bg-zinc-900 transition-all duration-150">
+              <span className="w-2 h-2 rounded-full bg-blue-500 transition-colors shrink-0" />
+              mute
+            </button>
+
+            <button
+              onClick={closecall}
+              className=" w-full flex items-center  gap-2.5 px-3 py-3 rounded-xl bg-zinc-950 border-2 border-red-900 text-zinc-300 text-md font-mono hover:bg-red-950/30 hover:border-red-900/60 hover:text-red-500 transition-all duration-150"
+            >
+              <LuPhone />
+              end chat
+            </button>
+          </div>
+
+          <div className="flex flex-1 flex-col gro shrink-0 bg-zinc-950 border border-zinc-900 rounded-2xl overflow-hidden min-h-0">
+            <div className="flex items-center gap-3 px-4 py-4 border-b border-zinc-900 bg-black shrink-0">
+              <div className="w-3 h-3 items-center rounded-full bg-green-600" />
+              Chat with your opponent
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2.5 min-h-0">
+              {allMessages.map((msg, i) => (
+                <div
+                  key={i}
+                  className={`w-fit max-w-xs px-3.5 py-2 text-lg rounded-2xl break-words border-2 border-black ${
+                    msg.sender === "me"
+                      ? "bg-green-700 text-white ml-auto rounded-br-sm"
+                      : "bg-blue-700 text-white rounded-bl-sm"
+                  }`}
+                >
+                  {msg.text}
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-2 p-3 border-t border-zinc-900 bg-black/20 shrink-0">
               <input
                 ref={messageInput}
                 type="text"
                 onKeyDown={(e) => {
-                  if (e.key == "Enter") {
+                  if (e.key === "Enter") {
                     e.preventDefault();
                     handlemessage();
                   }
                 }}
-                name=""
-                id=""
-                className="bg-gray-400 text-black text-semibold text-llg border-2 border-black rounded-full p-2 w-90"
-                placeholder="llll"
+                className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-lg text-zinc-200 placeholder:text-zinc-400 transition-colors"
+                placeholder="type here"
               />
               <button
                 onClick={handlemessage}
-                onKeyDown={(e) => {
-                  if (e.key == "Enter") {
-                    e.preventDefault();
-                    handlemessage();
-                  }
-                }}
-                className="bg-blue-600 p-2 rounded-full w-17 ml-2 border-1 hover:border-black hover:bg-blue-500"
+                className="px-3 py-2 bg-zinc-800 border border-zinc-700 text-zinc-300 rounded-xl hover:bg-zinc-700 hover:text-white transition-all duration-150"
               >
-                send
+                Send
               </button>
             </div>
           </div>

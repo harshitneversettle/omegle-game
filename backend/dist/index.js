@@ -1,54 +1,73 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const WebSocket = require("ws");
-let all_sockets = [];
 let waiting_queue = [];
-let user1 = null;
-let user2 = null;
+let alive_sockets = new Set();
+let RoomtoSocket = new Map();
+let SockettoRoom = new Map();
 let wss = new WebSocket.WebSocketServer({ port: 8080 });
-let sender_socket = null;
-let receiver_socket = null;
+function tryConnection() {
+    if (waiting_queue.length >= 2) {
+        // => it's time to pair
+        const user1 = waiting_queue.shift()?.socket;
+        const user2 = waiting_queue.shift()?.socket;
+        const roomId = `roomId${Date.now()}`;
+        RoomtoSocket.set(roomId, { user1, user2 });
+        SockettoRoom.set(user1, roomId);
+        SockettoRoom.set(user2, roomId);
+        if (!user1)
+            return;
+        user1.send(JSON.stringify({
+            type: "create-offer",
+        }));
+    }
+}
 wss.on("connection", (socket) => {
     socket.on("message", (msg) => {
-        console.log("incoming user");
         const message = JSON.parse(msg.toString());
-        console.log(message);
-        if (message.type == "random") {
+        if (message.type == "new-connection") {
+            console.log("incoming connection");
             const message = JSON.parse(msg.toString());
             waiting_queue.push({
                 username: message.name,
                 socket: socket,
                 arrived_at: message.arriving_time,
             });
-            console.log("before pairing", waiting_queue.length);
-            if (waiting_queue.length >= 2) {
-                console.log("inside pairing", waiting_queue.length);
-                // => it's time to pair
-                user1 = waiting_queue.shift()?.socket;
-                user2 = waiting_queue.shift()?.socket;
-                // console.log(user1);
-                // console.log(user2);
-            }
-            console.log("after pairing", waiting_queue.length);
-            if (!user1)
-                return;
-            user1.send(JSON.stringify({
-                type: "create-offer",
-            }));
+            tryConnection();
+            setInterval(() => {
+                waiting_queue.forEach((i) => {
+                    const temp_socket = i.socket;
+                    temp_socket.ping;
+                    temp_socket.on("message", () => { });
+                });
+            }, 10000);
         }
         else if (message.type == "offer") {
+            const roomId = SockettoRoom.get(socket);
+            if (!roomId)
+                return;
+            const user2 = RoomtoSocket.get(roomId)?.user2;
             user2.send(JSON.stringify({
                 type: "offer",
                 sdp: message.sdp,
             }));
         }
         else if (message.type == "answer") {
+            const roomId = SockettoRoom.get(socket);
+            if (!roomId)
+                return;
+            const user1 = RoomtoSocket.get(roomId)?.user1;
             user1.send(JSON.stringify({
                 type: "answer",
                 sdp: message.sdp,
             }));
         }
         else if (message.type == "add-ice-candidates") {
+            const roomId = SockettoRoom.get(socket);
+            if (!roomId)
+                return;
+            const user1 = RoomtoSocket.get(roomId)?.user1;
+            const user2 = RoomtoSocket.get(roomId)?.user2;
             if (socket == user1) {
                 user2.send(JSON.stringify({
                     type: "ice-candidates",
@@ -63,6 +82,11 @@ wss.on("connection", (socket) => {
             }
         }
         else if (message.type == "message") {
+            const roomId = SockettoRoom.get(socket);
+            if (!roomId)
+                return;
+            const user1 = RoomtoSocket.get(roomId)?.user1;
+            const user2 = RoomtoSocket.get(roomId)?.user2;
             if (socket == user1) {
                 user2.send(JSON.stringify({
                     type: "message",
@@ -88,8 +112,14 @@ wss.on("connection", (socket) => {
             socket.send(JSON.stringify({
                 type: "closed-connection",
             }));
+            tryConnection();
         }
         else if (message.type == "connection-closed") {
+            const roomId = SockettoRoom.get(socket);
+            if (!roomId)
+                return;
+            const user1 = RoomtoSocket.get(roomId)?.user1;
+            const user2 = RoomtoSocket.get(roomId)?.user2;
             if (socket == user1) {
                 user2.send(JSON.stringify({
                     type: "connection-closed",
@@ -101,40 +131,44 @@ wss.on("connection", (socket) => {
                 }));
             }
         }
-        //  if (message.type == "sender") {
-        //     console.log("sender is set");
-        //     sender_socket = socket;
-        //   } else if (message.type === "receiver") {
-        //     console.log("receiver is set");
-        //     receiver_socket = socket;
-        //   } else if (message.type === "create-offer") {
-        //     console.log("offer incoming");
-        //     // => sender sending offer to receiver
-        //     receiver_socket?.send(
-        //       JSON.stringify({ type: "offer", sdp: message.sdp }),
-        //     );
-        //   } else if (message.type === "create-answer") {
-        //     console.log("ans incoming");
-        //     // => receiver sending answer to sender
-        //     sender_socket?.send(JSON.stringify({ type: "answer", sdp: message.sdp }));
-        //   } else if (message.type === "add-ice-candidates") {
-        //     console.log("ice candidates incoming ");
-        //     if (socket == sender_socket) {
-        //       receiver_socket?.send(
-        //         JSON.stringify({
-        //           type: "ice-candidates",
-        //           candidate: message.candidate,
-        //         }),
-        //       );
-        //     } else {
-        //       sender_socket?.send(
-        //         JSON.stringify({
-        //           type: "ice-candidates",
-        //           candidate: message.candidate,
-        //         }),
-        //       );
-        //     }
-        //   }
+    });
+    socket.on("pong", () => {
+        alive_sockets.add(socket);
+    });
+    socket.on("close", () => {
+        alive_sockets.delete(socket);
+        const roomId = SockettoRoom.get(socket);
+        const user1 = RoomtoSocket.get(roomId)?.user1;
+        const user2 = RoomtoSocket.get(roomId)?.user2;
+        if (!user1 || !user2 || !roomId)
+            return;
+        if (socket == user1) {
+            // notify user2 ki connection close ho gaya
+            // and user2 ko waiting queue me daalo , coz user1 ne connection break kiya hai
+            user2?.send(JSON.stringify({
+                type: "partner-gone",
+            }));
+            waiting_queue.push({
+                username: "null",
+                socket: user2,
+                arrived_at: Date.now(),
+            });
+        }
+        else {
+            // user2 ne connection break kiya hai
+            user1?.send(JSON.stringify({
+                type: "partner-gone",
+            }));
+            waiting_queue.push({
+                username: "null",
+                socket: user1,
+                arrived_at: Date.now(),
+            });
+        }
+        RoomtoSocket.delete(roomId);
+        SockettoRoom.delete(socket); // ye vo socket hai jiska close message aaya hai
+        SockettoRoom.delete(socket == user1 ? user2 : user1); // ye partner socket hia
+        tryConnection();
     });
 });
 //# sourceMappingURL=index.js.map
