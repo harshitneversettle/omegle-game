@@ -171,7 +171,8 @@ export default function Random() {
         ws.send(
           JSON.stringify({
             type: "random",
-            name: "harshit",
+            username: "harshit",
+            arriving_time: Date.now(),
           }),
         );
         setSocket(ws);
@@ -180,11 +181,11 @@ export default function Random() {
       ws.onmessage = async (msg) => {
         const message = JSON.parse(msg.data);
         if (message.type == "create-offer") {
+          // create offer mtlb offer banana hai
           if (!stream.current) {
             console.error("Camera not ready yet");
             return;
           }
-          // create offer mtlb offer banana hai
           pc.current = new RTCPeerConnection();
           // let stream = await navigator.mediaDevices.getUserMedia({
           //   video: true,

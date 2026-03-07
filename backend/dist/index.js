@@ -2,17 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const WebSocket = require("ws");
 let all_sockets = [];
-function getRandomIdx(length) {
-    let min = 0;
-    let max = length;
-    // +1 is because if we not add 1 the max will be excluded , isme nhi kiya coz array ka index hai -1 hi chaiye humesha
-    const first = Math.floor(Math.random() * (max - min) + min);
-    let second = Math.floor(Math.random() * (max - min) + min);
-    while (second === first) {
-        second = Math.floor(Math.random() * (max - min) + min);
-    }
-    return [first, second];
-}
+let waiting_queue = [];
 let user1 = null;
 let user2 = null;
 let wss = new WebSocket.WebSocketServer({ port: 8080 });
@@ -20,34 +10,31 @@ let sender_socket = null;
 let receiver_socket = null;
 wss.on("connection", (socket) => {
     socket.on("message", (msg) => {
+        console.log("incoming user");
         const message = JSON.parse(msg.toString());
+        console.log(message);
         if (message.type == "random") {
             const message = JSON.parse(msg.toString());
-            all_sockets.push({
+            waiting_queue.push({
                 username: message.name,
                 socket: socket,
+                arrived_at: message.arriving_time,
             });
-            if (all_sockets.length >= 2) {
-                // console.log("1");
-                // @ts-ignore
-                const [rand1, rand2] = getRandomIdx(all_sockets.length);
-                // console.log(rand1);
-                // console.log(rand2);
-                // console.log(rand);
-                // @ts-ignore
-                if (!all_sockets[rand1] || !all_sockets[rand2]) {
-                    return;
-                }
-                // console.log("2");
-                // @ts-ignore
-                user1 = all_sockets[rand1].socket;
-                // @ts-ignore
-                user2 = all_sockets[rand2].socket;
+            console.log("before pairing", waiting_queue.length);
+            if (waiting_queue.length >= 2) {
+                console.log("inside pairing", waiting_queue.length);
+                // => it's time to pair
+                user1 = waiting_queue.shift()?.socket;
+                user2 = waiting_queue.shift()?.socket;
                 // console.log(user1);
                 // console.log(user2);
-                user1?.send(JSON.stringify({ type: "create-offer" }));
-                // all_sockets[1]!.socket.send(JSON.stringify({ type: "create-answer" }));
             }
+            console.log("after pairing", waiting_queue.length);
+            if (!user1)
+                return;
+            user1.send(JSON.stringify({
+                type: "create-offer",
+            }));
         }
         else if (message.type == "offer") {
             user2.send(JSON.stringify({
@@ -95,9 +82,9 @@ wss.on("connection", (socket) => {
         }
         else if (message.type == "close") {
             console.log("insode cloese");
-            console.log(all_sockets);
-            all_sockets = all_sockets.filter((i) => i.socket !== socket);
-            console.log(all_sockets);
+            waiting_queue = waiting_queue.filter((i) => i.socket !== socket);
+            console.log(waiting_queue.length);
+            console.log(waiting_queue);
             socket.send(JSON.stringify({
                 type: "closed-connection",
             }));
