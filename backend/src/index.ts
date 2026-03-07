@@ -25,40 +25,34 @@ let waiting_queue: Users[] = [];
 let alive_sockets = new Set<WebSocket>();
 let RoomtoSocket = new Map<string, RoomType>();
 let SockettoRoom = new Map<WebSocket, string>();
-let user1: WebSocket | null = null;
-let user2: WebSocket | null = null;
+
 let wss = new WebSocket.WebSocketServer({ port: 8080 });
-let sender_socket: WebSocket | null = null;
-let receiver_socket: WebSocket | null = null;
 
 wss.on("connection", (socket) => {
   socket.on("message", (msg) => {
-    console.log("incoming user");
     const message = JSON.parse(msg.toString());
-    console.log(message);
-    if (message.type == "random") {
+    if (message.type == "new-connection") {
       const message = JSON.parse(msg.toString());
       waiting_queue.push({
         username: message.name,
         socket: socket,
         arrived_at: message.arriving_time,
       });
-
       if (waiting_queue.length >= 2) {
         // => it's time to pair
-        user1 = waiting_queue.shift()?.socket!;
-        user2 = waiting_queue.shift()?.socket!;
+        const user1 = waiting_queue.shift()?.socket!;
+        const user2 = waiting_queue.shift()?.socket!;
         const roomId = `roomId${Date.now()}`;
         RoomtoSocket.set(roomId, { user1, user2 });
         SockettoRoom.set(user1, roomId);
         SockettoRoom.set(user2, roomId);
+        if (!user1) return;
+        user1.send(
+          JSON.stringify({
+            type: "create-offer",
+          }),
+        );
       }
-      if (!user1) return;
-      user1.send(
-        JSON.stringify({
-          type: "create-offer",
-        }),
-      );
       setInterval(() => {
         waiting_queue.forEach((i) => {
           const temp_socket = i.socket;
@@ -67,6 +61,9 @@ wss.on("connection", (socket) => {
         });
       }, 10000);
     } else if (message.type == "offer") {
+      const roomId = SockettoRoom.get(socket);
+      if (!roomId) return;
+      const user2 = RoomtoSocket.get(roomId)?.user2;
       user2!.send(
         JSON.stringify({
           type: "offer",
@@ -74,6 +71,9 @@ wss.on("connection", (socket) => {
         }),
       );
     } else if (message.type == "answer") {
+      const roomId = SockettoRoom.get(socket);
+      if (!roomId) return;
+      const user1 = RoomtoSocket.get(roomId)?.user1;
       user1!.send(
         JSON.stringify({
           type: "answer",
@@ -81,6 +81,10 @@ wss.on("connection", (socket) => {
         }),
       );
     } else if (message.type == "add-ice-candidates") {
+      const roomId = SockettoRoom.get(socket);
+      if (!roomId) return;
+      const user1 = RoomtoSocket.get(roomId)?.user1;
+      const user2 = RoomtoSocket.get(roomId)?.user2;
       if (socket == user1) {
         user2!.send(
           JSON.stringify({
@@ -97,6 +101,10 @@ wss.on("connection", (socket) => {
         );
       }
     } else if (message.type == "message") {
+      const roomId = SockettoRoom.get(socket);
+      if (!roomId) return;
+      const user1 = RoomtoSocket.get(roomId)?.user1;
+      const user2 = RoomtoSocket.get(roomId)?.user2;
       if (socket == user1) {
         user2!.send(
           JSON.stringify({
@@ -127,6 +135,10 @@ wss.on("connection", (socket) => {
         }),
       );
     } else if (message.type == "connection-closed") {
+      const roomId = SockettoRoom.get(socket);
+      if (!roomId) return;
+      const user1 = RoomtoSocket.get(roomId)?.user1;
+      const user2 = RoomtoSocket.get(roomId)?.user2;
       if (socket == user1) {
         user2!.send(
           JSON.stringify({
@@ -141,43 +153,9 @@ wss.on("connection", (socket) => {
         );
       }
     }
-    //  if (message.type == "sender") {
-    //     console.log("sender is set");
-    //     sender_socket = socket;
-    //   } else if (message.type === "receiver") {
-    //     console.log("receiver is set");
-    //     receiver_socket = socket;
-    //   } else if (message.type === "create-offer") {
-    //     console.log("offer incoming");
-    //     // => sender sending offer to receiver
-    //     receiver_socket?.send(
-    //       JSON.stringify({ type: "offer", sdp: message.sdp }),
-    //     );
-    //   } else if (message.type === "create-answer") {
-    //     console.log("ans incoming");
-    //     // => receiver sending answer to sender
-    //     sender_socket?.send(JSON.stringify({ type: "answer", sdp: message.sdp }));
-    //   } else if (message.type === "add-ice-candidates") {
-    //     console.log("ice candidates incoming ");
-    //     if (socket == sender_socket) {
-    //       receiver_socket?.send(
-    //         JSON.stringify({
-    //           type: "ice-candidates",
-    //           candidate: message.candidate,
-    //         }),
-    //       );
-    //     } else {
-    //       sender_socket?.send(
-    //         JSON.stringify({
-    //           type: "ice-candidates",
-    //           candidate: message.candidate,
-    //         }),
-    //       );
-    //     }
-    //   }
   });
 
-  socket.on("ping", () => {
+  socket.on("pong", () => {
     alive_sockets.add(socket);
   });
 

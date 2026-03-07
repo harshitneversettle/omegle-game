@@ -170,7 +170,7 @@ export default function Random() {
       ws.onopen = () => {
         ws.send(
           JSON.stringify({
-            type: "random",
+            type: "new-connection",
             username: "harshit",
             arriving_time: Date.now(),
           }),
