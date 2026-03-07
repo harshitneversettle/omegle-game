@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Sender from "./components/sender";
 import Receiver from "./components/receiver";
 import Random from "./components/random";
+import Test from "./components/test";
 
 function App() {
   return (
@@ -11,6 +12,7 @@ function App() {
         <Route path="/sender" element={<Sender />} />
         <Route path="/receiver" element={<Receiver />} />
         <Route path="/random" element={<Random />} />
+        <Route path="/test" element={<Test />} />
       </Routes>
     </BrowserRouter>
   );

@@ -15,6 +15,7 @@ export default function Random() {
   const messageInput = useRef(null);
   const stream = useRef<MediaStream | null>(null);
   const [connected, setConnected] = useState(false);
+  const competition_stat = useRef("paused");
 
   function distance(p1: any, p2: any) {
     const dx = p1.x - p2.x;
@@ -22,7 +23,15 @@ export default function Random() {
     return Math.sqrt(dx * dx + dy * dy);
   }
 
+  function startCompetition() {
+    competition_stat.current = "start";
+    initFaceDetection();
+  }
+  function stopCompetition() {
+    competition_stat.current = "stop";
+  }
   async function initFaceDetection() {
+    if (competition_stat.current !== "start") return;
     console.log("Initializing face detection..");
     const vision = await FilesetResolver.forVisionTasks(
       "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm",
@@ -41,6 +50,7 @@ export default function Random() {
     detect();
   }
   function detect() {
+    if (competition_stat.current !== "start") return;
     if (
       viderRef &&
       faceLandmarkerRef.current &&
@@ -276,7 +286,7 @@ export default function Random() {
     }
 
     initprocess();
-    initFaceDetection();
+    // initFaceDetection();
   }, []);
 
   function closecall() {
@@ -298,6 +308,20 @@ export default function Random() {
   return (
     <>
       <div className=" h-screen flex gap-50 mt-10 justify-center  ">
+        <div className="flex flex-col gap-5">
+          <button
+            onClick={startCompetition}
+            className="rounded-full bg-white border-1 border-black h-fit w-fit p-2 text-black"
+          >
+            Init competition
+          </button>
+          <button
+            onClick={stopCompetition}
+            className="rounded-full bg-white border-1 border-black h-fit w-fit p-2 text-black"
+          >
+            stop competition
+          </button>
+        </div>
         <div className="flex flex-col ml-25 ">
           partner's cam :{" "}
           <video
