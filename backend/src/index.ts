@@ -15,16 +15,22 @@ interface Users {
   socket: WebSocket;
   arrived_at: number;
 }
-let all_sockets: Users[] = [];
+
+interface RoomType {
+  user1: WebSocket;
+  user2: WebSocket;
+}
 
 let waiting_queue: Users[] = [];
-
+let alive_sockets = new Set<WebSocket>();
+let RoomtoSocket = new Map<string, RoomType>();
+let SockettoRoom = new Map<WebSocket, string>();
 let user1: WebSocket | null = null;
 let user2: WebSocket | null = null;
-
 let wss = new WebSocket.WebSocketServer({ port: 8080 });
 let sender_socket: WebSocket | null = null;
 let receiver_socket: WebSocket | null = null;
+
 wss.on("connection", (socket) => {
   socket.on("message", (msg) => {
     console.log("incoming user");
@@ -37,24 +43,29 @@ wss.on("connection", (socket) => {
         socket: socket,
         arrived_at: message.arriving_time,
       });
-      console.log("before pairing", waiting_queue.length);
 
       if (waiting_queue.length >= 2) {
-        console.log("inside pairing", waiting_queue.length);
         // => it's time to pair
         user1 = waiting_queue.shift()?.socket!;
         user2 = waiting_queue.shift()?.socket!;
-        // console.log(user1);
-        // console.log(user2);
+        const roomId = `roomId${Date.now()}`;
+        RoomtoSocket.set(roomId, { user1, user2 });
+        SockettoRoom.set(user1, roomId);
+        SockettoRoom.set(user2, roomId);
       }
-      console.log("after pairing", waiting_queue.length);
-
-      if(!user1) return ;
+      if (!user1) return;
       user1.send(
         JSON.stringify({
           type: "create-offer",
         }),
       );
+      setInterval(() => {
+        waiting_queue.forEach((i) => {
+          const temp_socket = i.socket;
+          temp_socket.ping;
+          temp_socket.on("message", () => {});
+        });
+      }, 10000);
     } else if (message.type == "offer") {
       user2!.send(
         JSON.stringify({
@@ -164,5 +175,46 @@ wss.on("connection", (socket) => {
     //       );
     //     }
     //   }
+  });
+
+  socket.on("ping", () => {
+    alive_sockets.add(socket);
+  });
+
+  socket.on("close", () => {
+    alive_sockets.delete(socket);
+    const roomId = SockettoRoom.get(socket);
+    const user1 = RoomtoSocket.get(roomId!)?.user1;
+    const user2 = RoomtoSocket.get(roomId!)?.user2;
+    if (!user1 || !user2 || !roomId) return;
+    if (socket == user1) {
+      // notify user2 ki connection close ho gaya
+      // and user2 ko waiting queue me daalo , coz user1 ne connection break kiya hai
+      user2?.send(
+        JSON.stringify({
+          type: "partner-gone",
+        }),
+      );
+      waiting_queue.push({
+        username: "null",
+        socket: user2,
+        arrived_at: Date.now(),
+      });
+    } else {
+      // user2 ne connection break kiya hai
+      user1?.send(
+        JSON.stringify({
+          type: "partner-gone",
+        }),
+      );
+      waiting_queue.push({
+        username: "null",
+        socket: user1,
+        arrived_at: Date.now(),
+      });
+    }
+    RoomtoSocket.delete(roomId);
+    SockettoRoom.delete(socket); // ye vo socket hai jiska close message aaya hai
+    SockettoRoom.delete(socket == user1 ? user2 : user1); // ye partner socket hia
   });
 });
