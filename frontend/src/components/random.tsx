@@ -131,6 +131,10 @@ export default function Random() {
     requestAnimationFrame(detect);
   }
 
+  function clearChat() {
+    setAllMessages([]);
+  }
+
   function handlemessage() {
     if (!messageInput.current) return;
     // @ts-ignore
@@ -335,7 +339,7 @@ export default function Random() {
               className="w-full h-full object-cover"
             />
 
-            <div className="absolute bottom-4 right-4 w-60 h-50 rounded-xl overflow-hidden bg-zinc-900 border border-zinc-800 shadow-xl shadow-black/60">
+            <div className="absolute  bottom-4 right-4 w-60 h-50 rounded-xl overflow-hidden bg-zinc-900 border border-zinc-800 shadow-xl shadow-black/60">
               <video
                 ref={selfviderRef}
                 autoPlay
@@ -377,9 +381,19 @@ export default function Random() {
           </div>
 
           <div className="flex flex-1 flex-col gro shrink-0 bg-zinc-950 border border-zinc-900 rounded-2xl overflow-hidden min-h-0">
-            <div className="flex items-center gap-3 px-4 py-4 border-b border-zinc-900 bg-black shrink-0">
-              <div className="w-3 h-3 items-center rounded-full bg-green-600" />
-              Chat with your opponent
+            <div className="flex items-center justify-between gap-3 px-4 py-4 border-b border-zinc-900 bg-black shrink-0">
+              <div className="flex items-center gap-3 justify-center">
+                <div className="w-3 h-3 items-center rounded-full bg-green-600" />
+                Chat with your opponent
+              </div>
+              <div className="">
+                <button
+                  onClick={clearChat}
+                  className="bg-zinc-800 hover:bg-zinc-500 p-2 rounded-full transition-all duration-150"
+                >
+                  clear chat
+                </button>
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2.5 min-h-0">
