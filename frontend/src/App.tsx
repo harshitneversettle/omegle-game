@@ -5,6 +5,7 @@ import Receiver from "./components/receiver";
 import Random from "./components/random";
 import Test from "./components/test";
 import Home from "./components/home";
+import AboutProject from "./components/working";
 
 function App() {
   return (
@@ -14,7 +15,8 @@ function App() {
         <Route path="/sender" element={<Sender />} />
         <Route path="/receiver" element={<Receiver />} />
         <Route path="/random" element={<Random />} />
-        <Route path="/test" element={<Test />} />
+        <Route path="/test" element={<Test />} />\
+        <Route path="/about-project" element={<AboutProject />} />
       </Routes>
     </BrowserRouter>
   );

@@ -1,9 +1,10 @@
-import { GoogleLogin, useGoogleLogin } from "@react-oauth/google";
-import { jwtDecode } from "jwt-decode";
+import { useGoogleLogin } from "@react-oauth/google";
 import { useState } from "react";
 import { LuArrowRight } from "react-icons/lu";
+import { useNavigate } from "react-router-dom";
 
 export default function LandingPage() {
+  const navigate = useNavigate();
   interface GoogleUser {
     email: string;
     name: string;
@@ -56,6 +57,12 @@ export default function LandingPage() {
 
         <div className="flex items-center gap-8 pr-2">
           <button
+            onClick={() => navigate("/about-project")}
+            className="px-4 py-2  text-lg text-zinc-200 transition-all"
+          >
+            about project
+          </button>
+          <button
             onClick={() => login()}
             className="text-lg text-zinc-300 hover:text-zinc-200 tracking-widest transition-colors"
           >
@@ -63,7 +70,7 @@ export default function LandingPage() {
           </button>
           <button
             onClick={() => {
-              window.location.href = "/random";
+              navigate("/random");
             }}
             className="px-4 py-2 bg-zinc-900 border border-zinc-700 rounded-xl text-lg text-zinc-200 hover:bg-zinc-800 hover:border-zinc-500 transition-all"
           >
