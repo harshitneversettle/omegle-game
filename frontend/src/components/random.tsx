@@ -17,6 +17,7 @@ export default function Random() {
   const stream = useRef<MediaStream | null>(null);
   const [connected, setConnected] = useState(false);
   const competition_stat = useRef("paused");
+  const [pipSmall, setPipSmall] = useState(false);
 
   function distance(p1: any, p2: any) {
     const dx = p1.x - p2.x;
@@ -160,6 +161,14 @@ export default function Random() {
   let pc = useRef<RTCPeerConnection | null>(null);
 
   useEffect(() => {
+    if (connected) {
+      setTimeout(() => setPipSmall(true), 500);
+    } else {
+      setPipSmall(false);
+    }
+  }, [connected]);
+
+  useEffect(() => {
     async function initprocess() {
       stream.current = await navigator.mediaDevices.getUserMedia({
         video: true,
@@ -192,10 +201,6 @@ export default function Random() {
             return;
           }
           pc.current = new RTCPeerConnection();
-          // let stream = await navigator.mediaDevices.getUserMedia({
-          //   video: true,
-          //   audio: false,
-          // });
 
           // always set ontrack before addtrack
           pc.current.ontrack = (event) => {
@@ -339,7 +344,13 @@ export default function Random() {
               className="w-full h-full object-cover"
             />
 
-            <div className="absolute  bottom-4 right-4 w-60 h-50 rounded-xl overflow-hidden bg-zinc-900 border border-zinc-800 shadow-xl shadow-black/60">
+            <div
+              className={`absolute transition-all duration-800 ease-in-out rounded-xl overflow-hidden bg-zinc-900 border border-zinc-800  ${
+                pipSmall
+                  ? "bottom-4 right-4 w-60 h-48"
+                  : "inset-0 w-full h-full rounded-2xl"
+              }`}
+            >
               <video
                 ref={selfviderRef}
                 autoPlay
