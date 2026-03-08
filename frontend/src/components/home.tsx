@@ -1,6 +1,42 @@
-import { LuVideo, LuZap, LuShield, LuArrowRight } from "react-icons/lu";
+import { GoogleLogin, useGoogleLogin } from "@react-oauth/google";
+import { jwtDecode } from "jwt-decode";
+import { useState } from "react";
+import { LuArrowRight } from "react-icons/lu";
 
 export default function LandingPage() {
+  interface GoogleUser {
+    email: string;
+    name: string;
+    firstname: string;
+    picture: string;
+    sub: number;
+  }
+
+  const [user, setUser] = useState<GoogleUser | null>(null);
+
+  const handleGoogleSuccess = async (response: any) => {
+    try {
+      console.log(response);
+      const res = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+        headers: { Authorization: `Bearer ${response.access_token}` },
+      });
+      const userData = await res.json();
+      console.log(userData);
+      const useredata: GoogleUser = {
+        name: userData.name,
+        email: userData.email,
+        firstname: userData.given_name,
+        picture: userData.picture,
+        sub: userData.sub,
+      };
+      setUser(useredata);
+    } catch (error) {
+      console.error("Error decoding token:", error);
+    }
+  };
+  const login = useGoogleLogin({
+    onSuccess: handleGoogleSuccess,
+  });
   return (
     <div
       className="min-h-screen bg-black text-white flex flex-col overflow-x-hidden"
@@ -17,9 +53,13 @@ export default function LandingPage() {
             DUEL.IO
           </span>
         </div>
+
         <div className="flex items-center gap-8 pr-2">
-          <button className="text-lg text-zinc-300 hover:text-zinc-200 tracking-widest transition-colors">
-            sign_in
+          <button
+            onClick={() => login()}
+            className="text-lg text-zinc-300 hover:text-zinc-200 tracking-widest transition-colors"
+          >
+            {user ? `Welcome, ${user.firstname}!` : "sign in"}
           </button>
           <button
             onClick={() => {
@@ -112,7 +152,7 @@ export default function LandingPage() {
       <section className="px-8 py-16 border-b border-zinc-900 flex flex-col items-center gap-12">
         <div className="w-full max-w-4xl rounded-2xl overflow-hidden border border-zinc-900 bg-zinc-950">
           <div className="w-full h-fit">
-            <img src="./public/image.png" alt="" />
+            <img src="/image.png" alt="" />
           </div>
         </div>
       </section>
