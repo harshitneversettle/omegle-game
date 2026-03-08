@@ -74,7 +74,7 @@ impl<'info> Make<'info> {
         };
 
         let cpi_ctx = CpiContext::new(self.token_program.to_account_info(), transfer_accounts);
-        token::transfer_checked(cpi_ctx, amount, 6)?;
+        token::transfer_checked(cpi_ctx, amount, self.mint_a.decimals)?;
         Ok(())
     }
 }

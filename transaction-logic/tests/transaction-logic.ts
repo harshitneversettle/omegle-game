@@ -40,33 +40,45 @@ describe("transaction-logic", () => {
       ),
     ),
   );
+  const maker = user1;
+  const taker = user2;
+  let mint_a;
+  let mint_b;
+  let maker_ata_a;
+  let maker_ata_b;
+  let taker_ata_a;
+  let taker_ata_b;
+  let escrow_pda;
+  let bump;
+  const unique_num = 1104;
+  const amount = 10;
 
-  it("Is initialized!", async () => {
-    const maker = user1;
-    const taker = user2;
-    const mint_a = await createMint(
-      connection,
-      maker,
-      maker.publicKey,
-      null,
-      6,
-    );
-
-    // solana airdrop 10 7zJKWL1qBYYExf23hRrcojrWVZJcpEg4tSQNFmqJJFm9 && solana airdrop 10 mwcfgyGrw3N36bEVMZFJzWQkidk2hLjGAZmf2m91QWC
-
-    const mint_b = await createMint(
-      connection,
-      taker,
-      taker.publicKey,
-      null,
-      6,
-    );
-
-    const maker_ata_a = await getOrCreateAssociatedTokenAccount(
+  before("", async () => {
+    mint_a = await createMint(connection, maker, maker.publicKey, null, 6);
+    mint_b = await createMint(connection, taker, taker.publicKey, null, 6);
+    maker_ata_a = await getOrCreateAssociatedTokenAccount(
       connection,
       maker,
       mint_a,
       maker.publicKey,
+    );
+    maker_ata_b = await getOrCreateAssociatedTokenAccount(
+      connection,
+      maker,
+      mint_b,
+      maker.publicKey,
+    );
+    taker_ata_a = await getOrCreateAssociatedTokenAccount(
+      connection,
+      taker,
+      mint_a,
+      taker.publicKey,
+    );
+    taker_ata_b = await getOrCreateAssociatedTokenAccount(
+      connection,
+      taker,
+      mint_b,
+      taker.publicKey,
     );
     await mintTo(
       connection,
@@ -76,10 +88,31 @@ describe("transaction-logic", () => {
       maker,
       1000 * 10 ** 6,
     );
-
-    const unique_num = 1104;
-
-    const [escrow_pda, bump] = PublicKey.findProgramAddressSync(
+    await mintTo(
+      connection,
+      maker,
+      mint_b,
+      maker_ata_b.address,
+      taker,
+      1000 * 10 ** 6,
+    );
+    await mintTo(
+      connection,
+      taker,
+      mint_a,
+      taker_ata_a.address,
+      maker,
+      1000 * 10 ** 6,
+    );
+    await mintTo(
+      connection,
+      taker,
+      mint_b,
+      taker_ata_b.address,
+      taker,
+      1000 * 10 ** 6,
+    );
+    [escrow_pda, bump] = PublicKey.findProgramAddressSync(
       [
         Buffer.from("escrow"),
         maker.publicKey.toBuffer(),
@@ -87,8 +120,11 @@ describe("transaction-logic", () => {
       ],
       program.programId,
     );
-    const amount = 10;
-    const make_amaount = 10;
+  });
+
+  it("testing make ", async () => {
+    // solana airdrop 10 7zJKWL1qBYYExf23hRrcojrWVZJcpEg4tSQNFmqJJFm9 && solana airdrop 10 mwcfgyGrw3N36bEVMZFJzWQkidk2hLjGAZmf2m91QWC
+
     const ix = await program.methods
       .make(new BN(amount), new BN(unique_num))
       .accounts({
@@ -109,5 +145,28 @@ describe("transaction-logic", () => {
     console.log(escrow_data.mintB.toString());
     console.log(mint_b.toString());
     console.log(escrow_data.amount);
+  });
+
+  it("testing take", async () => {
+    const escrow_data = await program.account.escrow.fetch(escrow_pda);
+    let maker_escrow = escrow_data.maker;
+    let [vault_pda, bump_vault] = PublicKey.findProgramAddressSync(
+      [Buffer.from("vault"), maker_escrow.toBuffer()],
+      program.programId,
+    );
+    const ix = await program.methods.take(new BN(unique_num)).accounts({
+      taker : taker.publicKey ,
+      maker : maker_escrow ,
+      mintA : mint_a ,
+      mintB : mint_b ,
+      takerAtaA : taker_ata_a ,
+      takerAtaB : taker_ata_b ,
+      makerAtaB : maker_ata_b ,
+      escrowState : escrow_pda ,
+      vault : vault_pda ,
+    }).signers([taker]).rpc()
+
+    console.log(ix) ;
+    
   });
 });

@@ -17,8 +17,8 @@ pub mod transaction_logic {
         Ok(())
     }
 
-    pub fn take(ctx : Context<Take> ) -> Result<()> {
-        ctx.accounts.handle_take(&ctx.bumps)?;
+    pub fn take(ctx : Context<Take> , unique_num: u64) -> Result<()> {
+        ctx.accounts.handle_take(unique_num , &ctx.bumps )?;
         Ok(())
     }
 }
