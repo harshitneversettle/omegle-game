@@ -11,8 +11,8 @@ declare_id!("9bM5XZsQdDrN4Qq6QzgRb697kCMmf41tqPGGB3YYe1Bf");
 pub mod transaction_logic {
     use super::*;
 
-    pub fn make(ctx: Context<Make>, receive: u64, unique_num: u64) -> Result<()> {
-        ctx.accounts.handle_make(receive, unique_num, &ctx.bumps)?;
+    pub fn make(ctx: Context<Make>, receive: u64 , make_amount : u64, unique_num: u64) -> Result<()> {
+        ctx.accounts.handle_make(receive, unique_num , make_amount , &ctx.bumps)?;
         Ok(())
     }
 }
