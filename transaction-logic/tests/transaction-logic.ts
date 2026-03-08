@@ -87,10 +87,10 @@ describe("transaction-logic", () => {
       ],
       program.programId,
     );
-    const receive = 10;
+    const amount = 10;
     const make_amaount = 10;
     const ix = await program.methods
-      .make(new BN(receive), new BN(unique_num), new BN(make_amaount))
+      .make(new BN(amount), new BN(unique_num))
       .accounts({
         maker: maker.publicKey,
         mintA: mint_a,
@@ -108,6 +108,6 @@ describe("transaction-logic", () => {
     console.log(mint_a.toString());
     console.log(escrow_data.mintB.toString());
     console.log(mint_b.toString());
-    console.log(escrow_data.receive);
+    console.log(escrow_data.amount);
   });
 });
