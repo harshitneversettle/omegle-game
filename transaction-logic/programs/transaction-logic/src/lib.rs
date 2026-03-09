@@ -21,4 +21,9 @@ pub mod transaction_logic {
         ctx.accounts.handle_take(unique_num , &ctx.bumps )?;
         Ok(())
     }
+
+    pub fn refund(ctx : Context<Refund> , unique_num : u64) -> Result<()> {
+        ctx.accounts.handle_refund(unique_num , &ctx.bumps)?;
+        Ok(())
+    }
 }

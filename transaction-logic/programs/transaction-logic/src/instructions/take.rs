@@ -40,6 +40,9 @@ pub struct Take<'info> {
         mut ,
         seeds = [b"escrow" , maker.key().as_ref() , unique_num.to_le_bytes().as_ref() ] ,
         bump = escrow_state.bump ,
+        has_one = maker ,
+        has_one = mint_a ,
+        has_one = mint_b ,
     )]
     pub escrow_state : Account<'info, Escrow>,
 

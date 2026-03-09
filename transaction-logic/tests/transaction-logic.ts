@@ -5,6 +5,7 @@ import { Keypair, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import fs from "fs";
 import {
   createMint,
+  getAccount,
   getOrCreateAssociatedTokenAccount,
   mintTo,
 } from "@solana/spl-token";
@@ -51,7 +52,7 @@ describe("transaction-logic", () => {
   let escrow_pda;
   let bump;
   const unique_num = 1104;
-  const amount = 10;
+  const amount = 10 * 10 ** 6; // means 10 tokens
 
   before("", async () => {
     mint_a = await createMint(connection, maker, maker.publicKey, null, 6);
@@ -86,7 +87,7 @@ describe("transaction-logic", () => {
       mint_a,
       maker_ata_a.address,
       maker,
-      1000 * 10 ** 6,
+      100 * 10 ** 6,
     );
     await mintTo(
       connection,
@@ -94,7 +95,7 @@ describe("transaction-logic", () => {
       mint_b,
       maker_ata_b.address,
       taker,
-      1000 * 10 ** 6,
+      100 * 10 ** 6,
     );
     await mintTo(
       connection,
@@ -102,7 +103,7 @@ describe("transaction-logic", () => {
       mint_a,
       taker_ata_a.address,
       maker,
-      1000 * 10 ** 6,
+      100 * 10 ** 6,
     );
     await mintTo(
       connection,
@@ -110,7 +111,7 @@ describe("transaction-logic", () => {
       mint_b,
       taker_ata_b.address,
       taker,
-      1000 * 10 ** 6,
+      100 * 10 ** 6,
     );
     [escrow_pda, bump] = PublicKey.findProgramAddressSync(
       [
@@ -155,6 +156,8 @@ describe("transaction-logic", () => {
       [Buffer.from("vault"), maker_escrow.toBuffer()],
       program.programId,
     );
+    let vault_balance = (await getAccount(connection, vault_pda)).amount;
+    console.log("before vault balance ", Number(vault_balance) / 10 ** 6);
     const ix = await program.methods
       .take(new BN(unique_num))
       .accounts({
@@ -172,5 +175,38 @@ describe("transaction-logic", () => {
       .rpc();
 
     console.log(ix);
+
+    vault_balance = (await getAccount(connection, vault_pda)).amount;
+    console.log("after vault balance ", Number(vault_balance) / 10 ** 6);
+  });
+
+  it("testing refund", async () => {
+    const escrow_data = await program.account.escrow.fetch(escrow_pda);
+    // console.log("ye hai escrow data", escrow_data);
+    let maker_escrow = escrow_data.maker;
+    let [vault_pda, bump_vault] = PublicKey.findProgramAddressSync(
+      [Buffer.from("vault"), maker_escrow.toBuffer()],
+      program.programId,
+    );
+    let vault_balance = (await getAccount(connection, vault_pda)).amount;
+    console.log("vault balance before", Number(vault_balance) / 10 ** 6);
+
+    const ix = await program.methods
+      .take(new BN(unique_num))
+      .accounts({
+        maker: maker,
+        mintA: mint_a,
+        mintB: mint_b,
+        makerAtaA: maker_ata_a.address,
+        escrowState: escrow_pda,
+        vault: vault_pda,
+      })
+      .signers([maker])
+      .rpc();
+
+    console.log(ix);
+    vault_balance = (await getAccount(connection, vault_pda)).amount;
+    console.log("vault balance after", Number(vault_balance) / 10 ** 6);
+    console.log();
   });
 });
