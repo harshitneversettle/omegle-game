@@ -32,7 +32,7 @@ pub struct Take<'info> {
 
     #[account(
         mut ,
-        associated_token::mint=mint_a ,
+        associated_token::mint=mint_b ,
         associated_token::authority = maker
     )]
     pub maker_ata_b : Account<'info , TokenAccount> ,
@@ -40,8 +40,6 @@ pub struct Take<'info> {
         mut ,
         seeds = [b"escrow" , maker.key().as_ref() , unique_num.to_le_bytes().as_ref() ] ,
         bump = escrow_state.bump ,
-        has_one = mint_a ,
-        has_one = mint_b ,
     )]
     pub escrow_state : Account<'info, Escrow>,
 
@@ -62,7 +60,7 @@ impl<'info> Take<'info> {
         // phele vault se taker_ata_a
         let signer_seeds : &[&[&[u8]]] = &[&[
             b"escrow".as_ref() , 
-            &self.escrow_state.maker.as_ref() ,
+            self.escrow_state.maker.as_ref() ,
             &self.escrow_state.unique_num.to_le_bytes() ,
             &[self.escrow_state.bump],   
         ]] ;

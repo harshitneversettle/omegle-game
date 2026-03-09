@@ -149,24 +149,28 @@ describe("transaction-logic", () => {
 
   it("testing take", async () => {
     const escrow_data = await program.account.escrow.fetch(escrow_pda);
+    console.log("ye hai escrow data", escrow_data);
     let maker_escrow = escrow_data.maker;
     let [vault_pda, bump_vault] = PublicKey.findProgramAddressSync(
       [Buffer.from("vault"), maker_escrow.toBuffer()],
       program.programId,
     );
-    const ix = await program.methods.take(new BN(unique_num)).accounts({
-      taker : taker.publicKey ,
-      maker : maker_escrow ,
-      mintA : mint_a ,
-      mintB : mint_b ,
-      takerAtaA : taker_ata_a ,
-      takerAtaB : taker_ata_b ,
-      makerAtaB : maker_ata_b ,
-      escrowState : escrow_pda ,
-      vault : vault_pda ,
-    }).signers([taker]).rpc()
+    const ix = await program.methods
+      .take(new BN(unique_num))
+      .accounts({
+        taker: taker.publicKey,
+        maker: maker_escrow,
+        mintA: mint_a,
+        mintB: mint_b,
+        takerAtaA: taker_ata_a.address,
+        takerAtaB: taker_ata_b.address,
+        makerAtaB: maker_ata_b.address,
+        escrowState: escrow_pda,
+        vault: vault_pda,
+      })
+      .signers([taker])
+      .rpc();
 
-    console.log(ix) ;
-    
+    console.log(ix);
   });
 });
