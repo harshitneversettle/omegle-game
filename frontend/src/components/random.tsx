@@ -1,9 +1,23 @@
 import { FaceLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { Connection, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { useEffect, useRef, useState } from "react";
-import { LuPhone, LuVideo } from "react-icons/lu";
+import { LuPhone } from "react-icons/lu";
 
 export default function Random() {
   //   const ws = new WebSocket("ws://localhost:8080");
+  const connection = new Connection("https://api.devnet.solana.com");
+  const { publicKey } = useWallet();
+  useEffect(() => {
+    (async () => {
+      console.log("tyenfdjncjn", typeof publicKey);
+      console.log("pubkey", publicKey?.toString());
+      const balance = await connection.getBalance(publicKey!);
+      setBalance(Number(balance) / LAMPORTS_PER_SOL);
+      console.log("balance:", Number(balance) / LAMPORTS_PER_SOL);
+    })();
+  }, [publicKey]);
+
   interface message {
     text: string;
     sender: "me" | "peer";
@@ -18,11 +32,19 @@ export default function Random() {
   const [connected, setConnected] = useState(false);
   const competition_stat = useRef("paused");
   const [pipSmall, setPipSmall] = useState(false);
+  const [balance, setBalance] = useState(0);
+  const betRef = useRef<HTMLInputElement | null>(null);
+  const [bet, setBet] = useState(0);
 
   function distance(p1: any, p2: any) {
     const dx = p1.x - p2.x;
     const dy = p1.y - p2.y;
     return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  function handleBet() {
+    setBet(Number(betRef.current?.value));
+    alert(`Bet of ${betRef.current?.value} Sols placed successfully!`);
   }
 
   function startCompetition() {
@@ -317,21 +339,31 @@ export default function Random() {
     <>
       <div className="w-screen h-screen bg-black flex flex-col overflow-hidden">
         <div className="pl-7 pr-14 flex items-center justify-between h-18 px-5 py-3 border-b border-zinc-900 bg-zinc-950">
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-red-600" />
-            <span className="w-3 h-3 rounded-full bg-yellow-500" />
-            <span className="w-3 h-3 rounded-full bg-green-600" />
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full bg-red-600" />
+              <span className="w-3 h-3 rounded-full bg-yellow-500" />
+              <span className="w-3 h-3 rounded-full bg-green-600" />
+            </div>
+            <div className="group  flex items-center gap-2.5 px-3 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-300 text-md font-mono tracking-widest">
+              curr balance : {balance.toFixed(4)} Sols
+            </div>
+            <div className="group  flex items-center gap-2.5 px-3 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-300 text-md font-mono tracking-widest">
+              curr Bet : {bet} Sols
+            </div>
           </div>
 
-          <div
-            className={`flex items-center gap-2 px-3 py-1 rounded-full border font-mono text-lg ${
-              connected ? "border-green-800 " : "border-red-900 "
-            }`}
-          >
-            <span
-              className={`w-2.5 h-2.5 rounded-full ${connected ? "bg-green-500" : "bg-red-600"}`}
-            />
-            {connected ? "connected" : "disconnected"}
+          <div className="flex gap-8 ">
+            <div
+              className={`flex items-center gap-2 px-3 py-1 rounded-full border font-mono text-lg ${
+                connected ? "border-green-800 " : "border-red-900 "
+              }`}
+            >
+              <span
+                className={`w-2.5 h-2.5 rounded-full ${connected ? "bg-green-500" : "bg-red-600"}`}
+              />
+              {connected ? "connected" : "disconnected"}
+            </div>
           </div>
         </div>
 
@@ -360,35 +392,52 @@ export default function Random() {
             </div>
           </div>
 
-          <div className="flex flex-col w-50 items-center justify-center gap-3 w-36 shrink-0">
-            <button
-              onClick={startCompetition}
-              className="group w-full flex items-center gap-2.5 px-3 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-300 text-md font-mono hover:border-zinc-600 hover:text-zinc-200 hover:bg-zinc-900 transition-all duration-150"
-            >
-              <span className="w-2 h-2 rounded-full  bg-green-500 shrink-0" />
-              Start competing
-            </button>
+          <div className="flex flex-col w-50 items-center justify-between gap-3 w-36 shrink-0 pb-100 pt-65 ">
+            <div className="flex flex-col  gap-4 justify-center items-center">
+              <input
+                type="number"
+                ref={betRef}
+                onKeyDown={(e) => {
+                  if (e.key == "Enter") {
+                    e.preventDefault();
+                    handleBet();
+                  }
+                }}
+                className="w-full px-3 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-300 text-md  hover:border-zinc-600 hover:text-zinc-200 hover:bg-zinc-900 text-white transition-all duration-150 font-mono tracking-widest"
+                placeholder="Enter amount"
+              />
+              <button
+                onClick={handleBet}
+                className="w-fit p-2 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-300 text-md font-mono hover:border-zinc-600 hover:text-zinc-200 hover:bg-zinc-900 transition-all duration-150"
+              >
+                Bet
+              </button>
+            </div>
+            <div className="flex flex-col w-full items-center justify-center gap-3">
+              <button
+                onClick={startCompetition}
+                className="group w-full flex items-center gap-2.5 px-3 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-300 text-md font-mono hover:border-zinc-600 hover:text-zinc-200 hover:bg-zinc-900 transition-all duration-150"
+              >
+                <span className="w-2 h-2 rounded-full  bg-green-500 shrink-0" />
+                Start competing
+              </button>
 
-            <button
-              onClick={stopCompetition}
-              className="group w-full flex items-center gap-2.5 px-3 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-300 text-md font-mono hover:border-zinc-600 hover:text-zinc-200 hover:bg-zinc-900 transition-all duration-150"
-            >
-              <span className="w-2 h-2 rounded-full  bg-yellow-500 transition-colors shrink-0" />
-              stop
-            </button>
+              <button
+                onClick={stopCompetition}
+                className="group w-full flex items-center gap-2.5 px-3 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-300 text-md font-mono hover:border-zinc-600 hover:text-zinc-200 hover:bg-zinc-900 transition-all duration-150"
+              >
+                <span className="w-2 h-2 rounded-full  bg-yellow-500 transition-colors shrink-0" />
+                stop
+              </button>
 
-            <button className="group w-full flex items-center gap-2.5 px-3 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-300 text-md font-mono hover:border-zinc-600 hover:text-zinc-200 hover:bg-zinc-900 transition-all duration-150">
-              <span className="w-2 h-2 rounded-full bg-blue-500 transition-colors shrink-0" />
-              mute
-            </button>
-
-            <button
-              onClick={closecall}
-              className=" w-full flex items-center  gap-2.5 px-3 py-3 rounded-xl bg-zinc-950 border-2 border-red-900 text-zinc-300 text-md font-mono hover:bg-red-950/30 hover:border-red-900/60 hover:text-red-500 transition-all duration-150"
-            >
-              <LuPhone />
-              end chat
-            </button>
+              <button
+                onClick={closecall}
+                className=" w-full flex items-center  gap-2.5 px-3 py-3 rounded-xl bg-zinc-950 border-2 border-red-900 text-zinc-300 text-md font-mono hover:bg-red-950/30 hover:border-red-900/60 hover:text-red-500 transition-all duration-150"
+              >
+                <LuPhone />
+                end chat
+              </button>
+            </div>
           </div>
 
           <div className="flex flex-1 flex-col gro shrink-0 bg-zinc-950 border border-zinc-900 rounded-2xl overflow-hidden min-h-0">
