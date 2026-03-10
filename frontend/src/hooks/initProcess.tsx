@@ -6,6 +6,7 @@ interface message {
 }
 export function useInitProcess(
   setAllMessages: React.Dispatch<React.SetStateAction<message[]>>,
+  setBet: React.Dispatch<React.SetStateAction<number>>,
 ) {
   let pc = useRef<RTCPeerConnection | null>(null);
   const [socket, setSocket] = useState<WebSocket | null>(null);
@@ -134,6 +135,8 @@ export function useInitProcess(
           setAllMessages((prev) => [...prev, { text: text, sender: "peer" }]);
         } else if (message.type == "closed-connection") {
           setConnected(false);
+        } else if (message.type == "bet-set-amount") {
+          setBet(message.amount);
         }
       };
     }

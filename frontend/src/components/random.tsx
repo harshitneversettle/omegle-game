@@ -11,12 +11,13 @@ interface message {
 }
 export default function Random() {
   const [allMessages, setAllMessages] = useState<message[]>([]);
-  const { pc, socket, selfviderRef, viderRef, connected } =
-    useInitProcess(setAllMessages);
   const messageInput = useRef<HTMLInputElement>(null);
   const [pipSmall, setPipSmall] = useState(false);
   const betRef = useRef<HTMLInputElement | null>(null);
   const [bet, setBet] = useState(0);
+  const { pc, socket, selfviderRef, viderRef, connected } =
+    useInitProcess(setAllMessages , setBet);
+  const [noti, setNoti] = useState(false);
   const balance = useBalance();
   const { startCompetition, stopCompetition } = useFaceDetection(
     socket,
@@ -32,8 +33,20 @@ export default function Random() {
   const { closecall } = useCloseCall(socket, pc);
 
   function handleBet() {
+    if (!socket) return;
+    setNoti(true);
+    socket?.send(
+      JSON.stringify({
+        type: "bet-is-set",
+        amount: betRef.current?.value,
+      }),
+    );
+    setTimeout(() => {
+      setNoti(false);
+    }, 2000);
     setBet(Number(betRef.current?.value));
-    alert(`Bet of ${betRef.current?.value} Sols placed successfully!`);
+    if (!betRef.current) return;
+    betRef.current.value = "";
   }
 
   function clearChat() {
@@ -58,14 +71,19 @@ export default function Random() {
               <span className="w-3 h-3 rounded-full bg-yellow-500" />
               <span className="w-3 h-3 rounded-full bg-green-600" />
             </div>
-            <div className="group  flex items-center gap-2.5 px-3 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-300 text-md font-mono tracking-widest">
+            <div className="flex items-center gap-2.5 px-3 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-300 text-md font-mono tracking-widest">
               curr balance : {balance.toFixed(4)} Sols
             </div>
-            <div className="group  flex items-center gap-2.5 px-3 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-300 text-md font-mono tracking-widest">
+            <div
+              className={`flex items-center gap-2.5 px-3 py-3 rounded-xl bg-zinc-950 border ${
+                noti
+                  ? "border-yellow-400 border-3 duration-200 ease-linear"
+                  : "border-zinc-800 border duration-200"
+              } text-zinc-300 text-md font-mono tracking-widest`}
+            >
               curr Bet : {bet} Sols
             </div>
           </div>
-
           <div className="flex gap-8 ">
             <div
               className={`flex items-center gap-2 px-3 py-1 rounded-full border font-mono text-lg ${

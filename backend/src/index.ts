@@ -33,6 +33,7 @@ function tryConnection() {
     // => it's time to pair
     const user1 = waiting_queue.shift()?.socket!;
     const user2 = waiting_queue.shift()?.socket!;
+    if (user1 == user2) return;
     const roomId = `roomId${Date.now()}`;
     RoomtoSocket.set(roomId, { user1, user2 });
     SockettoRoom.set(user1, roomId);
@@ -50,7 +51,6 @@ wss.on("connection", (socket) => {
   socket.on("message", (msg) => {
     const message = JSON.parse(msg.toString());
     if (message.type == "new-connection") {
-      console.log("incoming connection");
       const message = JSON.parse(msg.toString());
       waiting_queue.push({
         username: message.name,
@@ -155,6 +155,27 @@ wss.on("connection", (socket) => {
         user1!.send(
           JSON.stringify({
             type: "connection-closed",
+          }),
+        );
+      }
+    } else if (message.type == "bet-is-set") {
+      console.log(message);
+      const roomId = SockettoRoom.get(socket);
+      if (!roomId) return;
+      const user1 = RoomtoSocket.get(roomId)?.user1;
+      const user2 = RoomtoSocket.get(roomId)?.user2;
+      if (socket == user1) {
+        user2?.send(
+          JSON.stringify({
+            type: "bet-set-amount",
+            amount: message.amount,
+          }),
+        );
+      } else {
+        user1?.send(
+          JSON.stringify({
+            type: "bet-set-amount",
+            amount: message.amount,
           }),
         );
       }
