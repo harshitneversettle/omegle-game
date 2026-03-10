@@ -1,10 +1,11 @@
 import { LuPhone } from "react-icons/lu";
 import { useBalance } from "../hooks/getBalance";
-import { useFaceDetection } from "../hooks/faceDetection";
 import { useHandleMessage } from "../hooks/handleMessage";
 import { useCloseCall } from "../hooks/closeCall";
 import { useInitProcess } from "../hooks/initProcess";
 import { useEffect, useRef, useState } from "react";
+import { useStartCompetition } from "../hooks/startCompetition";
+import { useStopCompetition } from "../hooks/stopCompetition";
 interface message {
   text: string;
   sender: "me" | "peer";
@@ -27,10 +28,16 @@ export default function Random() {
   );
 
   const balance = useBalance();
-  const { initFaceDetection } = useFaceDetection(
+  const { startCompetition } = useStartCompetition(
     socket,
-    viderRef,
     competition_stat,
+    setLockInput,
+    viderRef,
+  );
+  const { stopCompetition } = useStopCompetition(
+    socket,
+    competition_stat,
+    setLockInput,
   );
   const { handlemessage } = useHandleMessage(
     socket,
@@ -67,35 +74,6 @@ export default function Random() {
       setPipSmall(false);
     }
   }, [connected]);
-
-  function startCompetition() {
-    if (!socket.current) {
-      return;
-    }
-    // console.log("sending server a message (start)");
-    competition_stat.current = "start";
-    socket.current.send(
-      JSON.stringify({
-        type: "match-started",
-      }),
-    );
-    setLockInput(true);
-    initFaceDetection();
-  }
-
-  function stopCompetition() {
-    if (!socket.current) {
-      return;
-    }
-    console.log("sending server a message (stop)");
-    competition_stat.current = "stop";
-    setLockInput(false);
-    socket.current.send(
-      JSON.stringify({
-        type: "match-stopped",
-      }),
-    );
-  }
 
   return (
     <>
