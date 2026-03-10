@@ -15,27 +15,30 @@ export default function Random() {
   const [pipSmall, setPipSmall] = useState(false);
   const betRef = useRef<HTMLInputElement | null>(null);
   const [bet, setBet] = useState(0);
-  const { pc, socket, selfviderRef, viderRef, connected } =
-    useInitProcess(setAllMessages , setBet);
   const [noti, setNoti] = useState(false);
+  const [lockInput, setLockInput] = useState(false);
+  const { pc, socket, selfviderRef, viderRef, connected } = useInitProcess(
+    setAllMessages,
+    setBet,
+    setNoti,
+  );
+
   const balance = useBalance();
   const { startCompetition, stopCompetition } = useFaceDetection(
     socket,
-    //@ts-ignore
     viderRef,
+    setLockInput,
   );
   const { handlemessage } = useHandleMessage(
     socket,
-    //@ts-ignore
     setAllMessages,
     messageInput,
   );
-  const { closecall } = useCloseCall(socket, pc);
+  const { closecall } = useCloseCall(socket.current, pc);
 
   function handleBet() {
-    if (!socket) return;
     setNoti(true);
-    socket?.send(
+    socket.current?.send(
       JSON.stringify({
         type: "bet-is-set",
         amount: betRef.current?.value,
@@ -124,10 +127,11 @@ export default function Random() {
           </div>
 
           <div className="flex flex-col w-50 items-center justify-between gap-3 w-36 shrink-0 pb-100 pt-65 ">
-            <div className="flex flex-col  gap-4 justify-center items-center">
+            <div className={`flex flex-col gap-4 justify-center items-center`}>
               <input
                 type="number"
                 ref={betRef}
+                disabled={lockInput}
                 onKeyDown={(e) => {
                   if (e.key == "Enter") {
                     e.preventDefault();
@@ -139,6 +143,7 @@ export default function Random() {
               />
               <button
                 onClick={handleBet}
+                disabled={lockInput}
                 className="w-fit p-2 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-300 text-md font-mono hover:border-zinc-600 hover:text-zinc-200 hover:bg-zinc-900 transition-all duration-150"
               >
                 Bet

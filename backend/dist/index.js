@@ -11,6 +11,8 @@ function tryConnection() {
         // => it's time to pair
         const user1 = waiting_queue.shift()?.socket;
         const user2 = waiting_queue.shift()?.socket;
+        if (user1 == user2)
+            return;
         const roomId = `roomId${Date.now()}`;
         RoomtoSocket.set(roomId, { user1, user2 });
         SockettoRoom.set(user1, roomId);

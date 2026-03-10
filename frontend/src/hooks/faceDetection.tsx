@@ -3,8 +3,9 @@ import { distance } from "../helpers";
 import { useRef } from "react";
 
 export function useFaceDetection(
-  socket: WebSocket | null,
-  viderRef: React.RefObject<HTMLVideoElement>,
+  socket: React.RefObject<WebSocket | null>,
+  viderRef: React.RefObject<HTMLVideoElement | null>,
+  setLockInput: React.Dispatch<React.SetStateAction<boolean>>,
 ) {
   const competition_stat = useRef("paused");
   const faceLandmarkerRef = useRef<FaceLandmarker | null>(null);
@@ -31,11 +32,18 @@ export function useFaceDetection(
 
   function startCompetition() {
     competition_stat.current = "start";
+    socket.current?.send(
+      JSON.stringify({
+        type: "match-started",
+      }),
+    );
+    setLockInput(true);
     initFaceDetection();
   }
 
   function stopCompetition() {
     competition_stat.current = "stop";
+    setLockInput(false);
   }
   function detect() {
     if (competition_stat.current !== "start") return;

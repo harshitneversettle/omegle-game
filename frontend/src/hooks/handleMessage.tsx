@@ -1,12 +1,12 @@
 interface message {
   text: string;
-  sender: string;
+  sender: "me" | "peer";
 }
 
 export function useHandleMessage(
-  socket: WebSocket | null,
+  socket: React.RefObject<WebSocket | null>,
   setAllMessages: React.Dispatch<React.SetStateAction<message[]>>,
-  messageInput: React.RefObject<null>,
+  messageInput: React.RefObject<HTMLInputElement | null>,
 ) {
   function handlemessage() {
     if (!messageInput.current) return;
@@ -17,7 +17,7 @@ export function useHandleMessage(
       // @ts-ignore
       { text: text, sender: "me" },
     ]);
-    socket?.send(
+    socket.current?.send(
       JSON.stringify({
         type: "message",
         payload: {

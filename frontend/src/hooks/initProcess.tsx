@@ -5,11 +5,13 @@ interface message {
   sender: "me" | "peer";
 }
 export function useInitProcess(
-  setAllMessages: React.Dispatch<React.SetStateAction<message[]>>,
+  setAllMessages: React.Dispatch<React.SetStateAction<message[]>> | null,
   setBet: React.Dispatch<React.SetStateAction<number>>,
+  setNoti: React.Dispatch<React.SetStateAction<boolean>>,
 ) {
   let pc = useRef<RTCPeerConnection | null>(null);
-  const [socket, setSocket] = useState<WebSocket | null>(null);
+  //   const [socket, setSocket] = useState<WebSocket | null>(null);
+  const socket = useRef<WebSocket | null>(null);
   const stream = useRef<MediaStream | null>(null);
   const selfviderRef = useRef<HTMLVideoElement | null>(null);
   const viderRef = useRef<HTMLVideoElement>(null);
@@ -36,7 +38,8 @@ export function useInitProcess(
             arriving_time: Date.now(),
           }),
         );
-        setSocket(ws);
+        // setSocket(ws);
+        socket.current = ws;
       };
 
       ws.onmessage = async (msg) => {
@@ -71,7 +74,7 @@ export function useInitProcess(
             }
           };
           await pc.current.setLocalDescription(offer);
-          ws?.send(
+          socket.current?.send(
             JSON.stringify({
               type: "offer",
               sdp: offer,
@@ -131,12 +134,14 @@ export function useInitProcess(
         } else if (message.type === "ice-candidates") {
           await pc.current?.addIceCandidate(message.candidate);
         } else if (message.type == "message") {
+          if (!setAllMessages) return;
           const text = message.payload.text;
           setAllMessages((prev) => [...prev, { text: text, sender: "peer" }]);
         } else if (message.type == "closed-connection") {
           setConnected(false);
         } else if (message.type == "bet-set-amount") {
           setBet(message.amount);
+          setNoti(true);
         }
       };
     }
