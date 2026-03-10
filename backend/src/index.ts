@@ -187,6 +187,42 @@ wss.on("connection", (socket) => {
           }),
         );
       }
+    } else if (message.type == "match-started") {
+      const users = getUsers(SockettoRoom, RoomtoSocket, socket);
+      if (!users) return;
+      const { user1, user2 } = users;
+      console.log("cliend sensd message : start");
+      if (socket == user1) {
+        user2.send(
+          JSON.stringify({
+            type: "match-started-server",
+          }),
+        );
+      } else {
+        user1.send(
+          JSON.stringify({
+            type: "match-started-server",
+          }),
+        );
+      }
+    } else if (message.type == "match-stopped") {
+      const users = getUsers(SockettoRoom, RoomtoSocket, socket);
+      if (!users) return;
+      const { user1, user2 } = users;
+      console.log("cliend sensd message : stop");
+      if (socket == user1) {
+        user2.send(
+          JSON.stringify({
+            type: "match-stopped-server",
+          }),
+        );
+      } else {
+        user1.send(
+          JSON.stringify({
+            type: "match-stopped-server",
+          }),
+        );
+      }
     }
   });
 

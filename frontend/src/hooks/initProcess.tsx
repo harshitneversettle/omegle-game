@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useFaceDetection } from "./faceDetection";
 
 interface message {
   text: string;
@@ -8,6 +9,8 @@ export function useInitProcess(
   setAllMessages: React.Dispatch<React.SetStateAction<message[]>> | null,
   setBet: React.Dispatch<React.SetStateAction<number>>,
   setNoti: React.Dispatch<React.SetStateAction<boolean>>,
+  setLockInput: React.Dispatch<React.SetStateAction<boolean>>,
+  competition_stat: React.RefObject<string>,
 ) {
   let pc = useRef<RTCPeerConnection | null>(null);
   //   const [socket, setSocket] = useState<WebSocket | null>(null);
@@ -16,6 +19,11 @@ export function useInitProcess(
   const selfviderRef = useRef<HTMLVideoElement | null>(null);
   const viderRef = useRef<HTMLVideoElement>(null);
   const [connected, setConnected] = useState(false);
+  const { initFaceDetection } = useFaceDetection(
+    socket,
+    viderRef,
+    competition_stat,
+  );
 
   useEffect(() => {
     async function initprocess() {
@@ -47,7 +55,7 @@ export function useInitProcess(
         if (message.type == "create-offer") {
           // create offer mtlb offer banana hai
           if (!stream.current) {
-            console.error("Camera not ready yet");
+            // console.error("Camera not ready yet");
             return;
           }
           pc.current = new RTCPeerConnection();
@@ -74,7 +82,8 @@ export function useInitProcess(
             }
           };
           await pc.current.setLocalDescription(offer);
-          socket.current?.send(
+          if (!socket.current) return;
+          socket.current.send(
             JSON.stringify({
               type: "offer",
               sdp: offer,
@@ -120,7 +129,7 @@ export function useInitProcess(
           pc.current.onicecandidate = (msg) => {
             const connectionState = pc.current?.iceConnectionState;
             if (connectionState === "connected") setConnected(true);
-            console.log(connectionState);
+            // console.log(connectionState);
             if (msg.candidate) {
               ws.send(
                 JSON.stringify({
@@ -142,6 +151,15 @@ export function useInitProcess(
         } else if (message.type == "bet-set-amount") {
           setBet(message.amount);
           setNoti(true);
+        } else if (message.type == "match-started-server") {
+          console.log("server message : start");
+          setLockInput(true);
+          competition_stat.current = "start";
+          initFaceDetection();
+        } else if (message.type == "match-stopped-server") {
+          console.log("server message : stop");
+          setLockInput(false);
+          competition_stat.current = "stop";
         }
       };
     }

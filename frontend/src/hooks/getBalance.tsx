@@ -9,13 +9,10 @@ export function useBalance() {
 
   useEffect(() => {
     (async () => {
-      console.log("tyenfdjncjn", typeof publicKey);
-      console.log("pubkey", publicKey?.toString());
       const balance = await connection.getBalance(publicKey!);
       setBalance(Number(balance) / LAMPORTS_PER_SOL);
-      console.log("balance:", Number(balance) / LAMPORTS_PER_SOL);
     })();
   }, [publicKey]);
 
-  return balance ;
+  return balance;
 }

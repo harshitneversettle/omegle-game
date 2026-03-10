@@ -16,29 +16,33 @@ export default function Random() {
   const betRef = useRef<HTMLInputElement | null>(null);
   const [bet, setBet] = useState(0);
   const [noti, setNoti] = useState(false);
+  const competition_stat = useRef("paused");
   const [lockInput, setLockInput] = useState(false);
   const { pc, socket, selfviderRef, viderRef, connected } = useInitProcess(
     setAllMessages,
     setBet,
     setNoti,
+    setLockInput,
+    competition_stat,
   );
 
   const balance = useBalance();
-  const { startCompetition, stopCompetition } = useFaceDetection(
+  const { initFaceDetection } = useFaceDetection(
     socket,
     viderRef,
-    setLockInput,
+    competition_stat,
   );
   const { handlemessage } = useHandleMessage(
     socket,
     setAllMessages,
     messageInput,
   );
-  const { closecall } = useCloseCall(socket.current, pc);
+  const { closecall } = useCloseCall(socket, pc);
 
   function handleBet() {
+    if (!socket.current) return;
     setNoti(true);
-    socket.current?.send(
+    socket.current.send(
       JSON.stringify({
         type: "bet-is-set",
         amount: betRef.current?.value,
@@ -63,6 +67,35 @@ export default function Random() {
       setPipSmall(false);
     }
   }, [connected]);
+
+  function startCompetition() {
+    if (!socket.current) {
+      return;
+    }
+    // console.log("sending server a message (start)");
+    competition_stat.current = "start";
+    socket.current.send(
+      JSON.stringify({
+        type: "match-started",
+      }),
+    );
+    setLockInput(true);
+    initFaceDetection();
+  }
+
+  function stopCompetition() {
+    if (!socket.current) {
+      return;
+    }
+    console.log("sending server a message (stop)");
+    competition_stat.current = "stop";
+    setLockInput(false);
+    socket.current.send(
+      JSON.stringify({
+        type: "match-stopped",
+      }),
+    );
+  }
 
   return (
     <>

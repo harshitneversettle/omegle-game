@@ -6,6 +6,14 @@ let alive_sockets = new Set();
 let RoomtoSocket = new Map();
 let SockettoRoom = new Map();
 let wss = new WebSocket.WebSocketServer({ port: 8080 });
+const getUsers = (SockettoRoom, RoomtoSocket, socket) => {
+    const roomId = SockettoRoom.get(socket);
+    if (!roomId)
+        return;
+    const user1 = RoomtoSocket.get(roomId)?.user1;
+    const user2 = RoomtoSocket.get(roomId)?.user2;
+    return { user1, user2 };
+};
 function tryConnection() {
     if (waiting_queue.length >= 2) {
         // => it's time to pair
@@ -44,10 +52,10 @@ wss.on("connection", (socket) => {
             }, 10000);
         }
         else if (message.type == "offer") {
-            const roomId = SockettoRoom.get(socket);
-            if (!roomId)
+            const users = getUsers(SockettoRoom, RoomtoSocket, socket);
+            if (!users)
                 return;
-            const user2 = RoomtoSocket.get(roomId)?.user2;
+            const { user1, user2 } = users;
             user2.send(JSON.stringify({
                 type: "offer",
                 sdp: message.sdp,
@@ -64,11 +72,10 @@ wss.on("connection", (socket) => {
             }));
         }
         else if (message.type == "add-ice-candidates") {
-            const roomId = SockettoRoom.get(socket);
-            if (!roomId)
+            const users = getUsers(SockettoRoom, RoomtoSocket, socket);
+            if (!users)
                 return;
-            const user1 = RoomtoSocket.get(roomId)?.user1;
-            const user2 = RoomtoSocket.get(roomId)?.user2;
+            const { user1, user2 } = users;
             if (socket == user1) {
                 user2.send(JSON.stringify({
                     type: "ice-candidates",
@@ -83,11 +90,10 @@ wss.on("connection", (socket) => {
             }
         }
         else if (message.type == "message") {
-            const roomId = SockettoRoom.get(socket);
-            if (!roomId)
+            const users = getUsers(SockettoRoom, RoomtoSocket, socket);
+            if (!users)
                 return;
-            const user1 = RoomtoSocket.get(roomId)?.user1;
-            const user2 = RoomtoSocket.get(roomId)?.user2;
+            const { user1, user2 } = users;
             if (socket == user1) {
                 user2.send(JSON.stringify({
                     type: "message",
@@ -116,11 +122,10 @@ wss.on("connection", (socket) => {
             tryConnection();
         }
         else if (message.type == "connection-closed") {
-            const roomId = SockettoRoom.get(socket);
-            if (!roomId)
+            const users = getUsers(SockettoRoom, RoomtoSocket, socket);
+            if (!users)
                 return;
-            const user1 = RoomtoSocket.get(roomId)?.user1;
-            const user2 = RoomtoSocket.get(roomId)?.user2;
+            const { user1, user2 } = users;
             if (socket == user1) {
                 user2.send(JSON.stringify({
                     type: "connection-closed",
@@ -133,12 +138,10 @@ wss.on("connection", (socket) => {
             }
         }
         else if (message.type == "bet-is-set") {
-            console.log(message);
-            const roomId = SockettoRoom.get(socket);
-            if (!roomId)
+            const users = getUsers(SockettoRoom, RoomtoSocket, socket);
+            if (!users)
                 return;
-            const user1 = RoomtoSocket.get(roomId)?.user1;
-            const user2 = RoomtoSocket.get(roomId)?.user2;
+            const { user1, user2 } = users;
             if (socket == user1) {
                 user2?.send(JSON.stringify({
                     type: "bet-set-amount",
@@ -152,6 +155,40 @@ wss.on("connection", (socket) => {
                 }));
             }
         }
+        else if (message.type == "match-started") {
+            const users = getUsers(SockettoRoom, RoomtoSocket, socket);
+            if (!users)
+                return;
+            const { user1, user2 } = users;
+            console.log("cliend sensd message : start");
+            if (socket == user1) {
+                user2.send(JSON.stringify({
+                    type: "match-started-server",
+                }));
+            }
+            else {
+                user1.send(JSON.stringify({
+                    type: "match-started-server",
+                }));
+            }
+        }
+        else if (message.type == "match-stopped") {
+            const users = getUsers(SockettoRoom, RoomtoSocket, socket);
+            if (!users)
+                return;
+            const { user1, user2 } = users;
+            console.log("cliend sensd message : stop");
+            if (socket == user1) {
+                user2.send(JSON.stringify({
+                    type: "match-stopped-server",
+                }));
+            }
+            else {
+                user1.send(JSON.stringify({
+                    type: "match-stopped-server",
+                }));
+            }
+        }
     });
     socket.on("pong", () => {
         alive_sockets.add(socket);
@@ -159,8 +196,10 @@ wss.on("connection", (socket) => {
     socket.on("close", () => {
         alive_sockets.delete(socket);
         const roomId = SockettoRoom.get(socket);
-        const user1 = RoomtoSocket.get(roomId)?.user1;
-        const user2 = RoomtoSocket.get(roomId)?.user2;
+        const users = getUsers(SockettoRoom, RoomtoSocket, socket);
+        if (!users)
+            return;
+        const { user1, user2 } = users;
         if (!user1 || !user2 || !roomId)
             return;
         if (socket == user1) {

@@ -5,14 +5,13 @@ import { useRef } from "react";
 export function useFaceDetection(
   socket: React.RefObject<WebSocket | null>,
   viderRef: React.RefObject<HTMLVideoElement | null>,
-  setLockInput: React.Dispatch<React.SetStateAction<boolean>>,
+  competition_stat: React.RefObject<string>,
 ) {
-  const competition_stat = useRef("paused");
   const faceLandmarkerRef = useRef<FaceLandmarker | null>(null);
 
   async function initFaceDetection() {
     if (competition_stat.current !== "start") return;
-    console.log("Initializing face detection..");
+    // console.log("Initializing face detection..");
     const vision = await FilesetResolver.forVisionTasks(
       "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm",
     );
@@ -30,21 +29,6 @@ export function useFaceDetection(
     detect();
   }
 
-  function startCompetition() {
-    competition_stat.current = "start";
-    socket.current?.send(
-      JSON.stringify({
-        type: "match-started",
-      }),
-    );
-    setLockInput(true);
-    initFaceDetection();
-  }
-
-  function stopCompetition() {
-    competition_stat.current = "stop";
-    setLockInput(false);
-  }
   function detect() {
     if (competition_stat.current !== "start") return;
     if (
@@ -105,20 +89,16 @@ export function useFaceDetection(
       const horizontal_right = distance(p1_right, p4_right);
 
       const EAR_left =
-        (vertical1_left + vertical2_left) / (2 * horizontal_left); // on blinking , verticle distance is 0 but horizontal is always the same
+        (vertical1_left + vertical2_left) / (2 * horizontal_left); // on blinking , verticle distance 0 hota hai but horizontal hamesha same hota hai
       const EAR_right =
         (vertical1_right + vertical2_right) / (2 * horizontal_right);
 
       if (EAR_left < 0.28 || EAR_right < 0.28) {
         alert("Blink detected");
-        initFaceDetection();
       }
-      // if (results.faceLandmarks.length > 0) {
-      //   console.log("Face detected");
-      // }
     }
     requestAnimationFrame(detect);
   }
 
-  return { startCompetition, stopCompetition };
+  return { initFaceDetection };
 }

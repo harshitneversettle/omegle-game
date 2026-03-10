@@ -9,6 +9,7 @@ export function useHandleMessage(
   messageInput: React.RefObject<HTMLInputElement | null>,
 ) {
   function handlemessage() {
+    if (!socket.current) return;
     if (!messageInput.current) return;
     // @ts-ignore
     const text = messageInput.current.value;
@@ -17,7 +18,7 @@ export function useHandleMessage(
       // @ts-ignore
       { text: text, sender: "me" },
     ]);
-    socket.current?.send(
+    socket.current.send(
       JSON.stringify({
         type: "message",
         payload: {
