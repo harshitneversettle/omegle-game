@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 
-export default function AboutProject() {
+export default function Working() {
   const steps = [
     {
       num: "01",

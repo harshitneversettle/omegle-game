@@ -1,11 +1,13 @@
 import "./App.css";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import Sender from "./components/sender";
-import Receiver from "./components/receiver";
-import Random from "./components/random";
-import Test from "./components/test";
-import Home from "./components/home";
-import AboutProject from "./components/working";
+import {
+  LandingPage,
+  Random,
+  Test,
+  Working,
+  Sender,
+  Receiver,
+} from "./components/imports";
 import { clusterApiUrl } from "@solana/web3.js";
 import {
   PhantomWalletAdapter,
@@ -31,12 +33,12 @@ function App() {
         <WalletModalProvider>
           <BrowserRouter>
             <Routes>
-              <Route path="/" element={<Home />} />
+              <Route path="/" element={<LandingPage />} />
               <Route path="/sender" element={<Sender />} />
               <Route path="/receiver" element={<Receiver />} />
               <Route path="/random" element={<Random />} />
               <Route path="/test" element={<Test />} />
-              <Route path="/about-project" element={<AboutProject />} />
+              <Route path="/about-project" element={<Working />} />
             </Routes>
           </BrowserRouter>
         </WalletModalProvider>

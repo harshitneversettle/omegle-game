@@ -1,186 +1,44 @@
-import { FaceLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
-import { useWallet } from "@solana/wallet-adapter-react";
-import { Connection, LAMPORTS_PER_SOL } from "@solana/web3.js";
-import { useEffect, useRef, useState } from "react";
 import { LuPhone } from "react-icons/lu";
-
+import { useBalance } from "../hooks/getBalance";
+import { useFaceDetection } from "../hooks/faceDetection";
+import { useHandleMessage } from "../hooks/handleMessage";
+import { useCloseCall } from "../hooks/closeCall";
+import { useInitProcess } from "../hooks/initProcess";
+import { useEffect, useRef, useState } from "react";
+interface message {
+  text: string;
+  sender: "me" | "peer";
+}
 export default function Random() {
-  //   const ws = new WebSocket("ws://localhost:8080");
-  const connection = new Connection("https://api.devnet.solana.com");
-  const { publicKey } = useWallet();
-  useEffect(() => {
-    (async () => {
-      console.log("tyenfdjncjn", typeof publicKey);
-      console.log("pubkey", publicKey?.toString());
-      const balance = await connection.getBalance(publicKey!);
-      setBalance(Number(balance) / LAMPORTS_PER_SOL);
-      console.log("balance:", Number(balance) / LAMPORTS_PER_SOL);
-    })();
-  }, [publicKey]);
-
-  interface message {
-    text: string;
-    sender: "me" | "peer";
-  }
-  const [socket, setSocket] = useState<WebSocket | null>(null);
-  const viderRef = useRef<HTMLVideoElement | null>(null);
-  const selfviderRef = useRef<HTMLVideoElement | null>(null);
-  const faceLandmarkerRef = useRef<FaceLandmarker | null>(null);
   const [allMessages, setAllMessages] = useState<message[]>([]);
-  const messageInput = useRef(null);
-  const stream = useRef<MediaStream | null>(null);
-  const [connected, setConnected] = useState(false);
-  const competition_stat = useRef("paused");
+  const { pc, socket, selfviderRef, viderRef, connected } =
+    useInitProcess(setAllMessages);
+  const messageInput = useRef<HTMLInputElement>(null);
   const [pipSmall, setPipSmall] = useState(false);
-  const [balance, setBalance] = useState(0);
   const betRef = useRef<HTMLInputElement | null>(null);
   const [bet, setBet] = useState(0);
-
-  function distance(p1: any, p2: any) {
-    const dx = p1.x - p2.x;
-    const dy = p1.y - p2.y;
-    return Math.sqrt(dx * dx + dy * dy);
-  }
+  const balance = useBalance();
+  const { startCompetition, stopCompetition } = useFaceDetection(
+    socket,
+    //@ts-ignore
+    viderRef,
+  );
+  const { handlemessage } = useHandleMessage(
+    socket,
+    //@ts-ignore
+    setAllMessages,
+    messageInput,
+  );
+  const { closecall } = useCloseCall(socket, pc);
 
   function handleBet() {
     setBet(Number(betRef.current?.value));
     alert(`Bet of ${betRef.current?.value} Sols placed successfully!`);
   }
 
-  function startCompetition() {
-    competition_stat.current = "start";
-    initFaceDetection();
-  }
-  function stopCompetition() {
-    competition_stat.current = "stop";
-  }
-  async function initFaceDetection() {
-    if (competition_stat.current !== "start") return;
-    console.log("Initializing face detection..");
-    const vision = await FilesetResolver.forVisionTasks(
-      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm",
-    );
-
-    const faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
-      baseOptions: {
-        modelAssetPath:
-          "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
-      },
-      runningMode: "VIDEO",
-    });
-
-    faceLandmarkerRef.current = faceLandmarker;
-
-    detect();
-  }
-  function detect() {
-    if (competition_stat.current !== "start") return;
-    if (
-      viderRef &&
-      faceLandmarkerRef.current &&
-      viderRef.current!.readyState === 4
-    ) {
-      const results = faceLandmarkerRef.current.detectForVideo(
-        viderRef.current!,
-        Date.now(),
-      );
-      if (!socket) return;
-      if (!results.faceLandmarks[0]) {
-        alert("Face not detected");
-        requestAnimationFrame(detect);
-      }
-      if (!results.faceLandmarks.length) return;
-      const landmarks = results.faceLandmarks[0];
-      const p1_left = landmarks[33] || null;
-      const p2_left = landmarks[160] || null;
-      const p3_left = landmarks[158] || null;
-      const p4_left = landmarks[133] || null;
-      const p5_left = landmarks[153] || null;
-      const p6_left = landmarks[144] || null;
-
-      if (
-        !p1_left ||
-        !p2_left ||
-        !p3_left ||
-        !p4_left ||
-        !p5_left ||
-        !p6_left
-      ) {
-        alert("Eyes are not visible");
-      }
-      const p1_right = landmarks[362] || null;
-      const p2_right = landmarks[385] || null;
-      const p3_right = landmarks[387] || null;
-      const p4_right = landmarks[263] || null;
-      const p5_right = landmarks[373] || null;
-      const p6_right = landmarks[380] || null;
-      if (
-        !p1_right ||
-        !p2_right ||
-        !p3_right ||
-        !p4_right ||
-        !p5_right ||
-        !p6_right
-      ) {
-        alert("Eyes are not visible");
-      }
-      const vertical1_left = distance(p2_left, p6_left);
-      const vertical2_left = distance(p3_left, p5_left);
-      const horizontal_left = distance(p1_left, p4_left);
-
-      const vertical1_right = distance(p2_right, p6_right);
-      const vertical2_right = distance(p3_right, p5_right);
-      const horizontal_right = distance(p1_right, p4_right);
-
-      const EAR_left =
-        (vertical1_left + vertical2_left) / (2 * horizontal_left); // on blinking , verticle distance is 0 but horizontal is always the same
-      const EAR_right =
-        (vertical1_right + vertical2_right) / (2 * horizontal_right);
-
-      // console.log("EAR left ", EAR_left);
-      // console.log("EAR right ", EAR_right);
-      //  0.3001998922706451;
-
-      // open left = 0.33    open right = 0.36
-
-      if (EAR_left < 0.28 || EAR_right < 0.28) {
-        alert("Blink detected");
-        initFaceDetection();
-      }
-      // if (results.faceLandmarks.length > 0) {
-      //   console.log("Face detected");
-      // }
-    }
-    requestAnimationFrame(detect);
-  }
-
   function clearChat() {
     setAllMessages([]);
   }
-
-  function handlemessage() {
-    if (!messageInput.current) return;
-    // @ts-ignore
-    const text = messageInput.current.value;
-    setAllMessages((prev) => [
-      ...prev,
-      // @ts-ignore
-      { text: text, sender: "me" },
-    ]);
-    socket?.send(
-      JSON.stringify({
-        type: "message",
-        payload: {
-          // @ts-ignore
-          text: text,
-        },
-      }),
-    );
-    // @ts-ignore
-    messageInput.current.value = "";
-  }
-
-  let pc = useRef<RTCPeerConnection | null>(null);
 
   useEffect(() => {
     if (connected) {
@@ -190,151 +48,6 @@ export default function Random() {
     }
   }, [connected]);
 
-  useEffect(() => {
-    async function initprocess() {
-      stream.current = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: false,
-      });
-
-      // guard for checking that stream is there or not because camera access me thodi der lag skti hai
-      if (selfviderRef.current) {
-        selfviderRef.current.srcObject = stream.current;
-      }
-
-      let ws = new WebSocket("ws://localhost:8080");
-      ws.onopen = () => {
-        ws.send(
-          JSON.stringify({
-            type: "new-connection",
-            username: "harshit",
-            arriving_time: Date.now(),
-          }),
-        );
-        setSocket(ws);
-      };
-
-      ws.onmessage = async (msg) => {
-        const message = JSON.parse(msg.data);
-        if (message.type == "create-offer") {
-          // create offer mtlb offer banana hai
-          if (!stream.current) {
-            console.error("Camera not ready yet");
-            return;
-          }
-          pc.current = new RTCPeerConnection();
-
-          // always set ontrack before addtrack
-          pc.current.ontrack = (event) => {
-            if (viderRef.current && event.streams[0]) {
-              viderRef.current.srcObject = event.streams[0];
-            }
-          };
-          pc.current.addTrack(
-            stream.current!.getVideoTracks()[0],
-            stream.current!,
-          );
-          const offer = await pc.current.createOffer();
-          pc.current.onicecandidate = (msg) => {
-            if (msg.candidate) {
-              ws.send(
-                JSON.stringify({
-                  type: "add-ice-candidates",
-                  candidate: msg.candidate,
-                }),
-              );
-            }
-          };
-          await pc.current.setLocalDescription(offer);
-          ws?.send(
-            JSON.stringify({
-              type: "offer",
-              sdp: offer,
-            }),
-          );
-        } else if (message.type == "offer") {
-          // offer aaya hai , uske liye ans banana hai
-          pc.current = new RTCPeerConnection();
-          // always set ontrack before addtrack
-          pc.current.ontrack = (event) => {
-            if (viderRef.current && event.streams[0]) {
-              viderRef.current.srcObject = event.streams[0];
-            }
-          };
-          pc.current.addTrack(
-            stream.current!.getVideoTracks()[0],
-            stream.current!,
-          );
-          // ans banane se phele remote description set krna padha hai mandatory step hai
-          await pc.current.setRemoteDescription(message.sdp);
-          const answer = await pc.current.createAnswer();
-          await pc.current.setLocalDescription(answer);
-          ws.send(
-            JSON.stringify({
-              type: "answer",
-              sdp: answer,
-            }),
-          );
-          pc.current.onicecandidate = (msg) => {
-            const connectionState = pc.current?.iceConnectionState;
-            if (connectionState === "connected") setConnected(true);
-            if (msg.candidate) {
-              ws.send(
-                JSON.stringify({
-                  type: "add-ice-candidates",
-                  candidate: msg.candidate,
-                }),
-              );
-            }
-          };
-        } else if (message.type == "answer") {
-          if (!pc.current) return;
-          pc.current.onicecandidate = (msg) => {
-            const connectionState = pc.current?.iceConnectionState;
-            if (connectionState === "connected") setConnected(true);
-            console.log(connectionState);
-            if (msg.candidate) {
-              ws.send(
-                JSON.stringify({
-                  type: "add-ice-candidates",
-                  candidate: msg.candidate,
-                }),
-              );
-            }
-          };
-          await pc.current.setRemoteDescription(message.sdp);
-        } else if (message.type === "ice-candidates") {
-          await pc.current?.addIceCandidate(message.candidate);
-        } else if (message.type == "message") {
-          console.log(allMessages);
-          const text = message.payload.text;
-          setAllMessages((prev) => [...prev, { text: text, sender: "peer" }]);
-        } else if (message.type == "closed-connection") {
-          setConnected(false);
-        }
-      };
-    }
-
-    initprocess();
-    // initFaceDetection();
-  }, []);
-
-  function closecall() {
-    if (!socket) return;
-    socket.send(
-      JSON.stringify({
-        type: "close",
-      }),
-    );
-    pc.current?.close();
-    pc.current?.close();
-    socket.close();
-    socket?.send(
-      JSON.stringify({
-        type: "connection-closed",
-      }),
-    );
-  }
   return (
     <>
       <div className="w-screen h-screen bg-black flex flex-col overflow-hidden">
