@@ -4,8 +4,7 @@ import { useHandleMessage } from "../hooks/handleMessage";
 import { useCloseCall } from "../hooks/closeCall";
 import { useInitProcess } from "../hooks/initProcess";
 import { useEffect, useRef, useState } from "react";
-import { useStartCompetition } from "../hooks/startCompetition";
-import { useStopCompetition } from "../hooks/stopCompetition";
+import { useFaceDetection } from "../hooks/faceDetection";
 interface message {
   text: string;
   sender: "me" | "peer";
@@ -19,26 +18,31 @@ export default function Random() {
   const [noti, setNoti] = useState(false);
   const competition_stat = useRef("paused");
   const [lockInput, setLockInput] = useState(false);
-  const { pc, socket, selfviderRef, viderRef, connected } = useInitProcess(
+  const socket = useRef<WebSocket | null>(null);
+  const stream = useRef<MediaStream | null>(null);
+  const selfviderRef = useRef<HTMLVideoElement | null>(null);
+  const viderRef = useRef<HTMLVideoElement>(null);
+
+  const { initFaceDetection } = useFaceDetection(
+    socket,
+    viderRef,
+    competition_stat,
+  );
+
+  const { pc, connected } = useInitProcess(
+    socket,
+    stream,
+    selfviderRef,
+    viderRef,
     setAllMessages,
     setBet,
     setNoti,
     setLockInput,
     competition_stat,
+    initFaceDetection,
   );
 
   const balance = useBalance();
-  const { startCompetition } = useStartCompetition(
-    socket,
-    competition_stat,
-    setLockInput,
-    viderRef,
-  );
-  const { stopCompetition } = useStopCompetition(
-    socket,
-    competition_stat,
-    setLockInput,
-  );
   const { handlemessage } = useHandleMessage(
     socket,
     setAllMessages,
@@ -74,6 +78,35 @@ export default function Random() {
       setPipSmall(false);
     }
   }, [connected]);
+
+  function startCompetition() {
+    if (!socket.current) {
+      return;
+    }
+    // console.log("sending server a message (start)");
+    competition_stat.current = "start";
+    socket.current.send(
+      JSON.stringify({
+        type: "match-started",
+      }),
+    );
+    setLockInput(true);
+    initFaceDetection();
+  }
+
+  function stopCompetition() {
+    if (!socket.current) {
+      return;
+    }
+    console.log("sending server a message (stop)");
+    competition_stat.current = "stop";
+    setLockInput(false);
+    socket.current.send(
+      JSON.stringify({
+        type: "match-stopped",
+      }),
+    );
+  }
 
   return (
     <>

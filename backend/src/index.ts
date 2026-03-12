@@ -198,7 +198,7 @@ wss.on("connection", (socket) => {
             type: "match-started-server",
           }),
         );
-      } else {
+      } else if (socket == user2) {
         user1.send(
           JSON.stringify({
             type: "match-started-server",
@@ -209,6 +209,7 @@ wss.on("connection", (socket) => {
       const users = getUsers(SockettoRoom, RoomtoSocket, socket);
       if (!users) return;
       const { user1, user2 } = users;
+
       console.log("cliend sensd message : stop");
       if (socket == user1) {
         user2.send(
@@ -216,7 +217,7 @@ wss.on("connection", (socket) => {
             type: "match-stopped-server",
           }),
         );
-      } else {
+      } else if (socket == user2) {
         user1.send(
           JSON.stringify({
             type: "match-stopped-server",

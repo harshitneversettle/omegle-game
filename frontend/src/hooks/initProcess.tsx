@@ -1,29 +1,25 @@
 import { useEffect, useRef, useState } from "react";
-import { useFaceDetection } from "./faceDetection";
 
 interface message {
   text: string;
   sender: "me" | "peer";
 }
 export function useInitProcess(
+  socket: React.RefObject<WebSocket | null>,
+  stream: React.RefObject<MediaStream | null>,
+  selfviderRef: React.RefObject<HTMLVideoElement | null>,
+  viderRef: React.RefObject<HTMLVideoElement | null>,
   setAllMessages: React.Dispatch<React.SetStateAction<message[]>> | null,
   setBet: React.Dispatch<React.SetStateAction<number>>,
   setNoti: React.Dispatch<React.SetStateAction<boolean>>,
   setLockInput: React.Dispatch<React.SetStateAction<boolean>>,
   competition_stat: React.RefObject<string>,
+  initFaceDetection: () => Promise<void>,
 ) {
   let pc = useRef<RTCPeerConnection | null>(null);
   //   const [socket, setSocket] = useState<WebSocket | null>(null);
-  const socket = useRef<WebSocket | null>(null);
-  const stream = useRef<MediaStream | null>(null);
-  const selfviderRef = useRef<HTMLVideoElement | null>(null);
-  const viderRef = useRef<HTMLVideoElement>(null);
+
   const [connected, setConnected] = useState(false);
-  const { initFaceDetection } = useFaceDetection(
-    socket,
-    viderRef,
-    competition_stat,
-  );
 
   useEffect(() => {
     async function initprocess() {
@@ -152,6 +148,9 @@ export function useInitProcess(
           setBet(message.amount);
           setNoti(true);
         } else if (message.type == "match-started-server") {
+          console.log(
+            "match-started-server received, calling initFaceDetection",
+          );
           console.log("server message : start");
           setLockInput(true);
           competition_stat.current = "start";

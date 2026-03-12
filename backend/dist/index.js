@@ -166,7 +166,7 @@ wss.on("connection", (socket) => {
                     type: "match-started-server",
                 }));
             }
-            else {
+            else if (socket == user2) {
                 user1.send(JSON.stringify({
                     type: "match-started-server",
                 }));
@@ -183,7 +183,7 @@ wss.on("connection", (socket) => {
                     type: "match-stopped-server",
                 }));
             }
-            else {
+            else if (socket == user2) {
                 user1.send(JSON.stringify({
                     type: "match-stopped-server",
                 }));
