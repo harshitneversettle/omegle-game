@@ -3,7 +3,6 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import {
   LandingPage,
   Random,
-  Test,
   Working,
   Sender,
   Receiver,
@@ -37,7 +36,6 @@ function App() {
               <Route path="/sender" element={<Sender />} />
               <Route path="/receiver" element={<Receiver />} />
               <Route path="/random" element={<Random />} />
-              <Route path="/test" element={<Test />} />
               <Route path="/about-project" element={<Working />} />
             </Routes>
           </BrowserRouter>

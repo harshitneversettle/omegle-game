@@ -1,10 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 export default function Sender() {
   // this is sender , first we have to tell signaling server ki ye sender hai , iska ip (or whatever) apne paas store krlo
 
   const senderSocket = useRef<WebSocket | null>(null);
-  const [pc, setPc] = useState<RTCPeerConnection | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
@@ -35,7 +34,6 @@ export default function Sender() {
           sdp: pc.localDescription,
         }),
       );
-      setPc(pc);
     };
     pc.onicecandidate = (msg) => {
       if (msg.candidate) {

@@ -1,11 +1,8 @@
 import { useGoogleLogin } from "@react-oauth/google";
-import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import { use, useEffect, useState } from "react";
+import {  useState } from "react";
 import { LuArrowRight } from "react-icons/lu";
 import { useNavigate } from "react-router-dom";
-import idl from "../../../transaction-logic/target/idl/transaction_logic.json";
-import { Connection, LAMPORTS_PER_SOL } from "@solana/web3.js";
 
 export default function LandingPage() {
   const navigate = useNavigate();

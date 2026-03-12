@@ -8,7 +8,6 @@ export default function Receiver() {
   let pc = useRef<RTCPeerConnection>(null);
   const videoref = useRef<HTMLVideoElement | null>(null);
   const faceLandmarkerRef = useRef<FaceLandmarker | null>(null);
-  let face_not_dectected_count = 0;
 
   function distance(p1: any, p2: any) {
     const dx = p1.x - p2.x;
