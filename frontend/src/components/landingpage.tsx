@@ -109,7 +109,7 @@ export default function LandingPage() {
         <div className="flex gap-3 z-10">
           <button
             onClick={() => {
-              window.location.href = "/random";
+              navigate("/random");
             }}
             className="flex items-center gap-2 px-6 py-3 bg-zinc-100 text-black text-md font-bold rounded-xl hover:bg-white transition-all"
           >
@@ -117,7 +117,7 @@ export default function LandingPage() {
           </button>
           <button
             onClick={() => {
-              window.location.href = "/demo";
+              navigate("/demo");
             }}
             className="flex items-center gap-2 px-6 py-3 bg-zinc-950 border border-zinc-700 text-zinc-400 text-md rounded-xl hover:border-zinc-600 hover:text-white transition-all"
           >

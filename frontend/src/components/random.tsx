@@ -22,11 +22,14 @@ export default function Random() {
   const stream = useRef<MediaStream | null>(null);
   const selfviderRef = useRef<HTMLVideoElement | null>(null);
   const viderRef = useRef<HTMLVideoElement>(null);
+  const blinkRef = useRef(false) ;
+  const [winningStatus , setWinningStatus ] = useState(false) ;
 
   const { initFaceDetection } = useFaceDetection(
     socket,
     viderRef,
     competition_stat,
+    blinkRef,
   );
 
   const { pc, connected } = useInitProcess(
@@ -40,6 +43,7 @@ export default function Random() {
     setLockInput,
     competition_stat,
     initFaceDetection,
+    setWinningStatus,
   );
 
   const balance = useBalance();

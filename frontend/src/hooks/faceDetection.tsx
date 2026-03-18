@@ -6,6 +6,7 @@ export function useFaceDetection(
   socket: React.RefObject<WebSocket | null>,
   viderRef: React.RefObject<HTMLVideoElement | null>,
   competition_stat: React.RefObject<string>,
+  blinkRef: React.RefObject<boolean>,
 ) {
   const faceLandmarkerRef = useRef<FaceLandmarker | null>(null);
 
@@ -44,6 +45,12 @@ export function useFaceDetection(
       if (!socket) return;
       if (!results.faceLandmarks[0]) {
         alert("Face not detected");
+        blinkRef.current = true;
+        socket.current?.send(
+          JSON.stringify({
+            type: "blinked",
+          }),
+        );
         requestAnimationFrame(detect);
       }
       if (!results.faceLandmarks.length) return;

@@ -15,6 +15,7 @@ export function useInitProcess(
   setLockInput: React.Dispatch<React.SetStateAction<boolean>>,
   competition_stat: React.RefObject<string>,
   initFaceDetection: () => Promise<void>,
+  setWinningStatus: React.Dispatch<React.SetStateAction<boolean>>,
 ) {
   let pc = useRef<RTCPeerConnection | null>(null);
   //   const [socket, setSocket] = useState<WebSocket | null>(null);
@@ -159,6 +160,9 @@ export function useInitProcess(
           console.log("server message : stop");
           setLockInput(false);
           competition_stat.current = "stop";
+        } else if ((message.type = "peer-blinked")) {
+          console.log("you won nigga");
+          setWinningStatus(true);
         }
       };
     }

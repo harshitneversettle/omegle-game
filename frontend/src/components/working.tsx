@@ -1,3 +1,4 @@
+import { LuArrowRight } from "react-icons/lu";
 import { useNavigate } from "react-router-dom";
 
 export default function Working() {
@@ -118,6 +119,10 @@ export default function Working() {
           backgroundSize: "40px 40px",
         }}
       >
+        <div className="flex items-center gap-3 px-3 py-1.5 rounded-full border border-zinc-800 bg-zinc-950 text-md text-zinc-500 tracking-widest z-10">
+          <span className="w-2 h-2 rounded-full bg-green-400" />
+          in Progress
+        </div>
         <h1 className="text-5xl md:text-7xl font-bold text-zinc-100 leading-tight tracking-tight mb-4">
           stake SOL.
           <br />
@@ -127,6 +132,16 @@ export default function Working() {
           a peer-to-peer staking arena — stake SOL, lock eyes, and the last one
           to blink takes the pot. secured by solana. witnessed by no one.
         </p>
+        <button
+          onClick={() => {
+            window.open(
+              "https://github.com/harshitneversettle/Wynk-It/blob/main/README.md",
+            );
+          }}
+          className="flex items-center gap-2 px-6 mt-10 py-3 bg-zinc-100 text-black text-md font-bold rounded-xl hover:bg-white transition-all"
+        >
+          View Readme <LuArrowRight size={14} />
+        </button>
       </section>
 
       <section className="px-8 py-16 border-b border-zinc-900 max-w-5xl mx-auto w-full">

@@ -223,6 +223,23 @@ wss.on("connection", (socket) => {
             type: "match-stopped-server",
           }),
         );
+      } else if (message.type == "blinked") {
+        const users = getUsers(SockettoRoom, RoomtoSocket, socket);
+        if (!users) return;
+        const { user1, user2 } = users;
+        if (socket == user1) {
+          user2.send(
+            JSON.stringify({
+              type: "peer-blinked",
+            }),
+          );
+        } else if (socket == user2) {
+          user1.send(
+            JSON.stringify({
+              type: "peer-blinked",
+            }),
+          );
+        }
       }
     }
   });
