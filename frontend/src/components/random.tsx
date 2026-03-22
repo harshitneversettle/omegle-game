@@ -5,6 +5,18 @@ import { useCloseCall } from "../hooks/closeCall";
 import { useInitProcess } from "../hooks/initProcess";
 import { useEffect, useRef, useState } from "react";
 import { useFaceDetection } from "../hooks/faceDetection";
+import wallet from "../config/wallet";
+import connection from "../config/connection";
+import {
+  createAssociatedTokenAccount,
+  createAssociatedTokenAccountInstruction,
+  createMint,
+  getAccount,
+  getAssociatedTokenAddress,
+  getOrCreateAssociatedTokenAccount,
+  mintTo,
+} from "@solana/spl-token";
+import { PublicKey, Transaction } from "@solana/web3.js";
 interface message {
   text: string;
   sender: "me" | "peer";
@@ -24,13 +36,14 @@ export default function Random() {
   const viderRef = useRef<HTMLVideoElement>(null);
   const blinkRef = useRef(false);
   const [winningStatus, setWinningStatus] = useState(false);
-
   const { initFaceDetection } = useFaceDetection(
     socket,
     viderRef,
     competition_stat,
     blinkRef,
+    setLockInput,
   );
+  const { publicKey, signAllTransactions, signTransaction } = wallet();
 
   const { pc, connected } = useInitProcess(
     socket,
@@ -83,11 +96,21 @@ export default function Random() {
     }
   }, [connected]);
 
-  function startCompetition() {
+  async function startCompetition() {
     if (!socket.current) {
       return;
     }
-    // console.log("sending server a message (start)");
+    console.log(publicKey);
+    if (!publicKey) return;
+    const wsol = new PublicKey("So11111111111111111111111111111111111111112");
+    let makerAta = await getAssociatedTokenAddress(wsol, publicKey);
+    const makerAtaInfo = await connection.getAccountInfo(makerAta) ;
+
+    if(!makerAtaInfo){
+      const tx = new Transaction().add(
+        createAssociatedTokenAccountInstruction(publicKey , makerAta , publicKey , wsol)
+      )
+    }
     competition_stat.current = "start";
     socket.current.send(
       JSON.stringify({
@@ -97,21 +120,6 @@ export default function Random() {
     setLockInput(true);
     initFaceDetection();
   }
-
-  // function stopCompetition() {
-  //   // e.preventDefault();
-  //   if (!socket.current) {
-  //     return;
-  //   }
-  //   console.log("sending server a message (stop)");
-  //   competition_stat.current = "stop";
-  //   setLockInput(false);
-  //   socket.current.send(
-  //     JSON.stringify({
-  //       type: "match-stopped",
-  //     }),
-  //   );
-  // }
 
   return (
     <>
@@ -197,6 +205,9 @@ export default function Random() {
               >
                 Bet
               </button>
+              <div className="flex flex-col w-full items-center justify-center w-fit p-2 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-300 text-md font-mono hover:border-zinc-600 hover:text-zinc-200 hover:bg-zinc-900 transition-all duration-150">
+                {winningStatus ? "you Won" : ";)"}
+              </div>
             </div>
             <div className="flex flex-col w-full items-center justify-center gap-3">
               <button

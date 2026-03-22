@@ -49,12 +49,7 @@ pub struct Make<'info> {
 }
 
 impl<'info> Make<'info> {
-    pub fn handle_make(
-        &mut self,
-        amount: u64,
-        unique_num: u64,
-        bumps: &MakeBumps,
-    ) -> Result<()> {
+    pub fn handle_make(&mut self, amount: u64, unique_num: u64, bumps: &MakeBumps) -> Result<()> {
         self.escrow_state.set_inner(Escrow {
             maker: self.maker.key(),
             mint_a: self.mint_a.key(),

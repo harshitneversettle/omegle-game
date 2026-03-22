@@ -164,6 +164,7 @@ export function useInitProcess(
           console.log(message.reason)
           console.log("you won nigga");
           setWinningStatus(true);
+          setLockInput(false)
         }
       };
     }

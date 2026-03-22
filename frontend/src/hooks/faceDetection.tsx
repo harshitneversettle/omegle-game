@@ -7,9 +7,9 @@ export function useFaceDetection(
   viderRef: React.RefObject<HTMLVideoElement | null>,
   competition_stat: React.RefObject<string>,
   blinkRef: React.RefObject<boolean>,
+  setLockInput: React.Dispatch<React.SetStateAction<boolean>>,
 ) {
   const faceLandmarkerRef = useRef<FaceLandmarker | null>(null);
-  let count = 0 ;
   async function initFaceDetection() {
     if (competition_stat.current !== "start") return;
     // console.log("Initializing face detection..");
@@ -104,6 +104,7 @@ export function useFaceDetection(
         alert("Blink detected");
         socket.current?.send(JSON.stringify({ type: "blink-detected" }));
         competition_stat.current = "stop";
+        setLockInput(false);
       }
     }
     requestAnimationFrame(detect);
