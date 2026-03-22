@@ -16,6 +16,7 @@ export function useInitProcess(
   competition_stat: React.RefObject<string>,
   initFaceDetection: () => Promise<void>,
   setWinningStatus: React.Dispatch<React.SetStateAction<boolean>>,
+  setPipSmall: React.Dispatch<React.SetStateAction<boolean>>,
 ) {
   let pc = useRef<RTCPeerConnection | null>(null);
   //   const [socket, setSocket] = useState<WebSocket | null>(null);
@@ -143,24 +144,24 @@ export function useInitProcess(
           if (!setAllMessages) return;
           const text = message.payload.text;
           setAllMessages((prev) => [...prev, { text: text, sender: "peer" }]);
-        } else if (message.type == "closed-connection") {
+        } else if (message.type == "connection-closed") {
+          setPipSmall(false);
           setConnected(false);
         } else if (message.type == "bet-set-amount") {
           setBet(message.amount);
           setNoti(true);
         } else if (message.type == "match-started-server") {
           console.log(
-            "match-started-server received, calling initFaceDetection",
+            "match started by peer , calling initFaceDetection",
           );
           console.log("server message : start");
           setLockInput(true);
           competition_stat.current = "start";
+          setPipSmall(true);
           initFaceDetection();
-        } else if (message.type == "match-stopped-server") {
-          console.log("server message : stop");
-          setLockInput(false);
+        } else if (message.type == "you-won") {
           competition_stat.current = "stop";
-        } else if ((message.type = "peer-blinked")) {
+          console.log(message.reason)
           console.log("you won nigga");
           setWinningStatus(true);
         }

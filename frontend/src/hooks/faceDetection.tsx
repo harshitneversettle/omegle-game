@@ -9,7 +9,7 @@ export function useFaceDetection(
   blinkRef: React.RefObject<boolean>,
 ) {
   const faceLandmarkerRef = useRef<FaceLandmarker | null>(null);
-
+  let count = 0 ;
   async function initFaceDetection() {
     if (competition_stat.current !== "start") return;
     // console.log("Initializing face detection..");
@@ -31,8 +31,7 @@ export function useFaceDetection(
   }
 
   function detect() {
-    if (competition_stat.current !== "start") return;
-
+    if (competition_stat.current != "start") return;
     if (
       viderRef &&
       faceLandmarkerRef.current &&
@@ -103,7 +102,7 @@ export function useFaceDetection(
 
       if (EAR_left < 0.28 || EAR_right < 0.28) {
         alert("Blink detected");
-        socket.current?.send(JSON.stringify({ type: "match-stopped" }));
+        socket.current?.send(JSON.stringify({ type: "blink-detected" }));
         competition_stat.current = "stop";
       }
     }

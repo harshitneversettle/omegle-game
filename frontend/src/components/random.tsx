@@ -22,8 +22,8 @@ export default function Random() {
   const stream = useRef<MediaStream | null>(null);
   const selfviderRef = useRef<HTMLVideoElement | null>(null);
   const viderRef = useRef<HTMLVideoElement>(null);
-  const blinkRef = useRef(false) ;
-  const [winningStatus , setWinningStatus ] = useState(false) ;
+  const blinkRef = useRef(false);
+  const [winningStatus, setWinningStatus] = useState(false);
 
   const { initFaceDetection } = useFaceDetection(
     socket,
@@ -44,6 +44,7 @@ export default function Random() {
     competition_stat,
     initFaceDetection,
     setWinningStatus,
+    setPipSmall,
   );
 
   const balance = useBalance();
@@ -52,8 +53,7 @@ export default function Random() {
     setAllMessages,
     messageInput,
   );
-  const { closecall } = useCloseCall(socket, pc);
-
+  const { closecall } = useCloseCall(socket, pc, setPipSmall);
   function handleBet() {
     if (!socket.current) return;
     setNoti(true);
@@ -98,19 +98,20 @@ export default function Random() {
     initFaceDetection();
   }
 
-  function stopCompetition() {
-    if (!socket.current) {
-      return;
-    }
-    console.log("sending server a message (stop)");
-    competition_stat.current = "stop";
-    setLockInput(false);
-    socket.current.send(
-      JSON.stringify({
-        type: "match-stopped",
-      }),
-    );
-  }
+  // function stopCompetition() {
+  //   // e.preventDefault();
+  //   if (!socket.current) {
+  //     return;
+  //   }
+  //   console.log("sending server a message (stop)");
+  //   competition_stat.current = "stop";
+  //   setLockInput(false);
+  //   socket.current.send(
+  //     JSON.stringify({
+  //       type: "match-stopped",
+  //     }),
+  //   );
+  // }
 
   return (
     <>
@@ -200,19 +201,19 @@ export default function Random() {
             <div className="flex flex-col w-full items-center justify-center gap-3">
               <button
                 onClick={startCompetition}
-                className="group w-full flex items-center gap-2.5 px-3 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-300 text-md font-mono hover:border-zinc-600 hover:text-zinc-200 hover:bg-zinc-900 transition-all duration-150"
+                className=" w-full flex items-center gap-2.5 px-3 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-300 text-md font-mono hover:border-zinc-600 hover:text-zinc-200 hover:bg-zinc-900 transition-all duration-150"
               >
                 <span className="w-2 h-2 rounded-full  bg-green-500 shrink-0" />
                 Start competing
               </button>
 
-              <button
+              {/* <button
                 onClick={stopCompetition}
-                className="group w-full flex items-center gap-2.5 px-3 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-300 text-md font-mono hover:border-zinc-600 hover:text-zinc-200 hover:bg-zinc-900 transition-all duration-150"
+                className=" w-full flex items-center gap-2.5 px-3 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-300 text-md font-mono hover:border-zinc-600 hover:text-zinc-200 hover:bg-zinc-900 transition-all duration-150"
               >
                 <span className="w-2 h-2 rounded-full  bg-yellow-500 transition-colors shrink-0" />
                 stop
-              </button>
+              </button> */}
 
               <button
                 onClick={closecall}

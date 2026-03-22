@@ -112,16 +112,14 @@ wss.on("connection", (socket) => {
             }
         }
         else if (message.type == "close") {
-            console.log("insode cloese");
-            waiting_queue = waiting_queue.filter((i) => i.socket !== socket);
-            console.log(waiting_queue.length);
-            console.log(waiting_queue);
+            waiting_queue = waiting_queue.filter((i) => i.socket !== socket); // means socket ko nikal do
             socket.send(JSON.stringify({
                 type: "closed-connection",
             }));
             tryConnection();
         }
         else if (message.type == "connection-closed") {
+            console.log("inside connection closed");
             const users = getUsers(SockettoRoom, RoomtoSocket, socket);
             if (!users)
                 return;
@@ -160,7 +158,7 @@ wss.on("connection", (socket) => {
             if (!users)
                 return;
             const { user1, user2 } = users;
-            console.log("cliend sensd message : start");
+            console.log("cliend started the match ");
             if (socket == user1) {
                 user2.send(JSON.stringify({
                     type: "match-started-server",
@@ -172,20 +170,22 @@ wss.on("connection", (socket) => {
                 }));
             }
         }
-        else if (message.type == "match-stopped") {
+        else if (message.type == "blink-detected") {
+            console.log("inside blink detected");
             const users = getUsers(SockettoRoom, RoomtoSocket, socket);
             if (!users)
                 return;
             const { user1, user2 } = users;
-            console.log("cliend sensd message : stop");
             if (socket == user1) {
                 user2.send(JSON.stringify({
-                    type: "match-stopped-server",
+                    type: "you-won",
+                    reason: "peer blinked"
                 }));
             }
             else if (socket == user2) {
                 user1.send(JSON.stringify({
-                    type: "match-stopped-server",
+                    type: "you-won",
+                    reason: "peer blinked",
                 }));
             }
         }
