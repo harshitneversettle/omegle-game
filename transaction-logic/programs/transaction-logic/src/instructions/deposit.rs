@@ -1,34 +1,33 @@
-cuse anchor_lang::prelude::*;
-use anchor_lang::solana_program::native_token::LAMPORTS_PER_SOL;
+use anchor_lang::prelude::*;
 use anchor_lang::system_program::{transfer, Transfer};
-
+use anchor_lang::solana_program::native_token::LAMPORTS_PER_SOL;
 use crate::state::vault::Vault;
 
 #[derive(Accounts)]
-#[instruction(match_id: u64 )]
+#[instruction(match_id: u64)]
 pub struct Deposit<'info> {
     #[account(mut)]
-    pub user2: Signer<'info>,
-
-    ///CHECK: only for vault
-    pub user1: UncheckedAccount<'info>,
+    pub user: Signer<'info>,
+    /// CHECK:
+    pub peer: UncheckedAccount<'info>,
     #[account(
-        mut ,
-        seeds = [b"vault" , user1.key().as_ref() , user2.key().as_ref() , match_id.to_le_bytes().as_ref() ] ,
-        bump
+        mut,
+        seeds = [b"vault", vault_state.maker.as_ref(), vault_state.taker.as_ref(), match_id.to_le_bytes().as_ref()],
+        bump = vault_state.bump,
     )]
     pub vault_state: Account<'info, Vault>,
     pub system_program: Program<'info, System>,
 }
 
 impl<'info> Deposit<'info> {
-    pub fn handle_depposit(&mut self,match_id: u64) -> Result<()> {
+    pub fn handle_depposit(&mut self, match_id: u64) -> Result<()> {
+        let amount = self.vault_state.bet;
         let transfer_accounts = Transfer {
-            from: self.user2.to_account_info(),
+            from: self.user.to_account_info(),
             to: self.vault_state.to_account_info(),
         };
         let cpi_ctx = CpiContext::new(self.system_program.to_account_info(), transfer_accounts);
-        transfer(cpi_ctx, self.vault_state.bet.checked_mul(LAMPORTS_PER_SOL).unwrap())?;
+        transfer(cpi_ctx, amount.checked_mul(LAMPORTS_PER_SOL).unwrap())?;
         Ok(())
     }
 }

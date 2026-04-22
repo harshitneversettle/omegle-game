@@ -1,29 +1,34 @@
 use anchor_lang::prelude::*;
 use anchor_lang::system_program::{transfer, Transfer};
 use crate::state::vault::Vault;
+use crate::errors::CustomError;
 
 #[derive(Accounts)]
 #[instruction(match_id: u64)]
-pub struct Release<'info> {
+pub struct ClaimVault<'info> {
     #[account(mut)]
-    pub user1: Signer<'info>,
+    pub winner: Signer<'info>,
     /// CHECK:
-    pub user2: UncheckedAccount<'info>,
+    pub loser: UncheckedAccount<'info>,
     #[account(
         mut,
-        seeds = [b"vault", user1.key().as_ref(), user2.key().as_ref(), match_id.to_le_bytes().as_ref()],
+        seeds = [b"vault", vault_state.maker.as_ref(), vault_state.taker.as_ref(), match_id.to_le_bytes().as_ref()],
         bump = vault_state.bump,
-        close = user1
+        close = winner
     )]
     pub vault_state: Account<'info, Vault>,
     pub system_program: Program<'info, System>,
 }
 
-impl<'info> Release<'info> {
-    pub fn handle_release(&mut self, match_id: u64) -> Result<()> {
-        let total = self.vault_state.to_account_info().lamports();
-        let half = total / 2;
+impl<'info> ClaimVault<'info> {
+    pub fn handle_claim(&mut self, match_id: u64) -> Result<()> {
+        require!(
+            self.winner.key() == self.vault_state.maker
+                || self.winner.key() == self.vault_state.taker,
+            CustomError::NotAPlayer
+        );
 
+        let total = self.vault_state.to_account_info().lamports();
         let bump = self.vault_state.bump;
         let match_id_bytes = match_id.to_le_bytes();
 
@@ -36,17 +41,16 @@ impl<'info> Release<'info> {
         ];
         let signer_seeds = &[seeds];
 
-        // send half to user2 (user1 gets their half via `close = user1`)
         let transfer_accounts = Transfer {
             from: self.vault_state.to_account_info(),
-            to: self.user2.to_account_info(),
+            to: self.winner.to_account_info(),
         };
         let cpi_ctx = CpiContext::new_with_signer(
             self.system_program.to_account_info(),
             transfer_accounts,
             signer_seeds,
         );
-        transfer(cpi_ctx, half)?;
+        transfer(cpi_ctx, total)?;
         Ok(())
     }
 }

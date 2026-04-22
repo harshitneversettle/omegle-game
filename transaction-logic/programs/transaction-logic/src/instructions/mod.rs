@@ -1,17 +1,14 @@
-pub mod make;
-pub use make::*;
+pub mod init_vault;
+pub use init_vault::*;
 
-pub mod take;
-pub use take::*;
-
-pub mod refund;
-pub use refund::*;
+pub mod join_vault;
+pub use join_vault::*;
 
 pub mod deposit;
 pub use deposit::*;
 
-pub mod init_vault;
-pub use init_vault::*;
+pub mod claim_vault;
+pub use claim_vault::*;
 
 pub mod release;
 pub use release::*;

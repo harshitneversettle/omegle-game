@@ -94,32 +94,33 @@ export default function Random() {
   }, [connected]);
 
   async function startCompetition() {
+    console.log("starting comp");
     if (!socket.current) {
       return;
     }
     console.log(publicKey);
-    if (!publicKey) return;
+    // if (!publicKey) return;
     const match_id = Date.now();
-    const program = getProgram(publicKey, signTransaction, signAllTransactions);
-    console.log(peerKeyRef.current!);
-    const peerPublicKey = new PublicKey(peerKeyRef.current!);
+    // const program = getProgram(publicKey, signTransaction, signAllTransactions);
+    // console.log(peerKeyRef.current!);
+    // const peerPublicKey = new PublicKey(peerKeyRef.current!);
 
-    // const vault_pda = PublicKey.findProgramAddressSync(
-    //   [
-    //     Buffer.from("vault"),
-    //     publicKey.toBuffer(),
-    //     peerPublicKey.toBuffer(),
-    //     new BN(match_id).toArrayLike(Buffer, "le", 8),
-    //   ],
-    //   programId,
-    // );
-    const init = await program?.methods
-      .initVault(new BN(bet), new BN(match_id))
-      .accounts({
-        user1: publicKey,
-        user2: peerPublicKey,
-      })
-      .rpc();
+    // // const vault_pda = PublicKey.findProgramAddressSync(
+    // //   [
+    // //     Buffer.from("vault"),
+    // //     publicKey.toBuffer(),
+    // //     peerPublicKey.toBuffer(),
+    // //     new BN(match_id).toArrayLike(Buffer, "le", 8),
+    // //   ],
+    // //   programId,
+    // // );
+    // const init = await program?.methods
+    //   .initVault(new BN(bet), new BN(match_id))
+    //   .accounts({
+    //     user1: publicKey,
+    //     user2: peerPublicKey,
+    //   })
+    //   .rpc();
     competition_stat.current = "start";
     socket.current.send(
       JSON.stringify({

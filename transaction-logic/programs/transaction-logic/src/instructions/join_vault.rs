@@ -4,35 +4,26 @@ use anchor_lang::solana_program::native_token::LAMPORTS_PER_SOL;
 use crate::state::vault::Vault;
 
 #[derive(Accounts)]
-#[instruction(amount: u64, match_id: u64)]
-pub struct InitVault<'info> {
+#[instruction(match_id: u64)]
+pub struct JoinVault<'info> {
     #[account(mut)]
-    pub user1: Signer<'info>,
+    pub user2: Signer<'info>,
     /// CHECK:
-    pub user2: UncheckedAccount<'info>,
+    pub user1: UncheckedAccount<'info>,
     #[account(
-        init,
-        payer = user1,
-        space = 8 + Vault::INIT_SPACE,
+        mut,
         seeds = [b"vault", user1.key().as_ref(), user2.key().as_ref(), match_id.to_le_bytes().as_ref()],
-        bump
+        bump = vault_state.bump,
     )]
     pub vault_state: Account<'info, Vault>,
     pub system_program: Program<'info, System>,
 }
 
-impl<'info> InitVault<'info> {
-    pub fn handle_init(&mut self, amount: u64, match_id: u64, bumps: &InitVaultBumps) -> Result<()> {
-        self.vault_state.set_inner(Vault {
-            maker: self.user1.key(),
-            taker: self.user2.key(),
-            bet: amount,
-            match_id,
-            bump: bumps.vault_state,
-        });
-
+impl<'info> JoinVault<'info> {
+    pub fn handle_join(&mut self) -> Result<()> {
+        let amount = self.vault_state.bet;
         let transfer_accounts = Transfer {
-            from: self.user1.to_account_info(),
+            from: self.user2.to_account_info(),
             to: self.vault_state.to_account_info(),
         };
         let cpi_ctx = CpiContext::new(self.system_program.to_account_info(), transfer_accounts);

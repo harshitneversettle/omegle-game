@@ -11,6 +11,7 @@ export function useFaceDetection(
 ) {
   const faceLandmarkerRef = useRef<FaceLandmarker | null>(null);
   async function initFaceDetection() {
+    console.log("Initializing face detection..");
     if (competition_stat.current !== "start") return;
     // console.log("Initializing face detection..");
     const vision = await FilesetResolver.forVisionTasks(
@@ -31,6 +32,7 @@ export function useFaceDetection(
   }
 
   function detect() {
+    console.log("Detecting...");
     if (competition_stat.current != "start") return;
     if (
       viderRef &&
