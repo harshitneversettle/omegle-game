@@ -176,6 +176,7 @@ wss.on("connection", (socket) => {
           JSON.stringify({
             type: "bet-set-amount",
             amount: message.amount,
+            peer_pub: message.pubKey,
           }),
         );
       } else {
@@ -183,6 +184,7 @@ wss.on("connection", (socket) => {
           JSON.stringify({
             type: "bet-set-amount",
             amount: message.amount,
+            peer_pub: message.pubKey,
           }),
         );
       }
@@ -195,12 +197,14 @@ wss.on("connection", (socket) => {
         user2.send(
           JSON.stringify({
             type: "match-started-server",
+            match_id: message.match_id,
           }),
         );
       } else if (socket == user2) {
         user1.send(
           JSON.stringify({
             type: "match-started-server",
+            match_id: message.match_id,
           }),
         );
       }

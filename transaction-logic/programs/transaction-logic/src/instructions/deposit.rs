@@ -1,4 +1,4 @@
-use anchor_lang::prelude::*;
+cuse anchor_lang::prelude::*;
 use anchor_lang::solana_program::native_token::LAMPORTS_PER_SOL;
 use anchor_lang::system_program::{transfer, Transfer};
 

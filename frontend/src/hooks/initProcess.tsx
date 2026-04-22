@@ -1,4 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import { getProgram } from "../config/program";
+import { BN } from "@coral-xyz/anchor";
+import wallet from "../config/wallet";
 
 interface message {
   text: string;
@@ -17,11 +20,18 @@ export function useInitProcess(
   initFaceDetection: () => Promise<void>,
   setWinningStatus: React.Dispatch<React.SetStateAction<boolean>>,
   setPipSmall: React.Dispatch<React.SetStateAction<boolean>>,
+  peerKeyRef: React.RefObject<string | null>,
 ) {
   let pc = useRef<RTCPeerConnection | null>(null);
   //   const [socket, setSocket] = useState<WebSocket | null>(null);
 
   const [connected, setConnected] = useState(false);
+  const { publicKey, signTransaction, signAllTransactions } = wallet();
+  const publicKeyRef = useRef(publicKey);
+
+  useEffect(() => {
+    publicKeyRef.current = publicKey;
+  }, [publicKey]);
 
   useEffect(() => {
     async function initprocess() {
@@ -36,6 +46,7 @@ export function useInitProcess(
       }
 
       let ws = new WebSocket("ws://localhost:8080");
+
       ws.onopen = () => {
         ws.send(
           JSON.stringify({
@@ -150,21 +161,33 @@ export function useInitProcess(
         } else if (message.type == "bet-set-amount") {
           setBet(message.amount);
           setNoti(true);
+          peerKeyRef.current = message.peer_pub;
         } else if (message.type == "match-started-server") {
-          console.log(
-            "match started by peer , calling initFaceDetection",
-          );
+          console.log("match started by peer , calling initFaceDetection");
           console.log("server message : start");
           setLockInput(true);
+          const program = getProgram(
+            publicKey!,
+            signTransaction,
+            signAllTransactions,
+          );
+
+          const deposite_ix = await program?.methods
+            .deposit(new BN(message.match_id))
+            .accounts({
+              user2: publicKeyRef.current!,
+              user1: peerKeyRef.current!,
+            })
+            .rpc();
           competition_stat.current = "start";
           setPipSmall(true);
           initFaceDetection();
         } else if (message.type == "you-won") {
           competition_stat.current = "stop";
-          console.log(message.reason)
+          console.log(message.reason);
           console.log("you won nigga");
           setWinningStatus(true);
-          setLockInput(false)
+          setLockInput(false);
         }
       };
     }

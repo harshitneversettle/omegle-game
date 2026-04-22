@@ -6,17 +6,11 @@ import { useInitProcess } from "../hooks/initProcess";
 import { useEffect, useRef, useState } from "react";
 import { useFaceDetection } from "../hooks/faceDetection";
 import wallet from "../config/wallet";
-import connection from "../config/connection";
-import {
-  createAssociatedTokenAccount,
-  createAssociatedTokenAccountInstruction,
-  createMint,
-  getAccount,
-  getAssociatedTokenAddress,
-  getOrCreateAssociatedTokenAccount,
-  mintTo,
-} from "@solana/spl-token";
-import { PublicKey, Transaction } from "@solana/web3.js";
+import { getProgram } from "../config/program";
+import { PublicKey } from "@solana/web3.js";
+import { BN } from "@coral-xyz/anchor";
+import { programId } from "../config/programId";
+
 interface message {
   text: string;
   sender: "me" | "peer";
@@ -35,6 +29,7 @@ export default function Random() {
   const selfviderRef = useRef<HTMLVideoElement | null>(null);
   const viderRef = useRef<HTMLVideoElement>(null);
   const blinkRef = useRef(false);
+  const peerKeyRef = useRef<string>(null);
   const [winningStatus, setWinningStatus] = useState(false);
   const { initFaceDetection } = useFaceDetection(
     socket,
@@ -58,6 +53,7 @@ export default function Random() {
     initFaceDetection,
     setWinningStatus,
     setPipSmall,
+    peerKeyRef,
   );
 
   const balance = useBalance();
@@ -74,6 +70,7 @@ export default function Random() {
       JSON.stringify({
         type: "bet-is-set",
         amount: betRef.current?.value,
+        pubKey: publicKey?.toString(),
       }),
     );
     setTimeout(() => {
@@ -102,19 +99,32 @@ export default function Random() {
     }
     console.log(publicKey);
     if (!publicKey) return;
-    const wsol = new PublicKey("So11111111111111111111111111111111111111112");
-    let makerAta = await getAssociatedTokenAddress(wsol, publicKey);
-    const makerAtaInfo = await connection.getAccountInfo(makerAta) ;
+    const match_id = Date.now();
+    const program = getProgram(publicKey, signTransaction, signAllTransactions);
+    console.log(peerKeyRef.current!);
+    const peerPublicKey = new PublicKey(peerKeyRef.current!);
 
-    if(!makerAtaInfo){
-      const tx = new Transaction().add(
-        createAssociatedTokenAccountInstruction(publicKey , makerAta , publicKey , wsol)
-      )
-    }
+    // const vault_pda = PublicKey.findProgramAddressSync(
+    //   [
+    //     Buffer.from("vault"),
+    //     publicKey.toBuffer(),
+    //     peerPublicKey.toBuffer(),
+    //     new BN(match_id).toArrayLike(Buffer, "le", 8),
+    //   ],
+    //   programId,
+    // );
+    const init = await program?.methods
+      .initVault(new BN(bet), new BN(match_id))
+      .accounts({
+        user1: publicKey,
+        user2: peerPublicKey,
+      })
+      .rpc();
     competition_stat.current = "start";
     socket.current.send(
       JSON.stringify({
         type: "match-started",
+        match_id,
       }),
     );
     setLockInput(true);
